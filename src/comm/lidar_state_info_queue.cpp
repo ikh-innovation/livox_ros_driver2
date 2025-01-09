@@ -22,20 +22,40 @@
 // SOFTWARE.
 //
 
-#ifndef LIVOX_ROS_DRIVER_LIDAR_COMMON_CALLBACK_H_
-#define LIVOX_ROS_DRIVER_LIDAR_COMMON_CALLBACK_H_	
-
-#include "comm/comm.h"
+#include "lidar_state_info_queue.h"
 
 namespace livox_ros {
 
-class LidarCommonCallback {
- public:
-  static void OnLidarPointClounCb(PointFrame* frame, void* client_data);
-  static void LidarImuDataCallback(ImuData* imu_data, void *client_data);
-  static void LidarStateInfoCallback(StateInfo* state_info, void *client_data);
-};
+void LidarStateInfoQueue::Push(StateInfo* state_info) {
+  StateInfo data;
+  data.lidar_type = state_info->lidar_type;
+  data.handle = state_info->handle;
+  data.data = state_info->data;
+  std::lock_guard<std::mutex> lock(mutex_);
+  state_info_queue_.push_back(std::move(data));
+}
+
+bool LidarStateInfoQueue::Pop(StateInfo& state_info) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (state_info_queue_.empty()) {
+    return false;
+  }
+  state_info = state_info_queue_.front();
+  state_info_queue_.pop_front();
+  return true;
+}
+
+bool LidarStateInfoQueue::Empty() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return state_info_queue_.empty();
+}
+
+void LidarStateInfoQueue::Clear() {
+  std::list<StateInfo> tmp_state_info_queue;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    state_info_queue_.swap(tmp_state_info_queue);
+  }
+}
 
 } // namespace livox_ros
-
-#endif // LIVOX_ROS_DRIVER_LIDAR_COMMON_CALLBACK_H_

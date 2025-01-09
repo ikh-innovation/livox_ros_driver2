@@ -122,6 +122,16 @@ void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
   return;
 }
 
+void LivoxLidarCallback::WorkModeChangeOnceCallback(livox_status status,
+                                                 uint32_t handle,
+                                                 LivoxLidarAsyncControlResponse *response,
+                                                 void *client_data) {
+  if (status != kLivoxLidarStatusSuccess) {
+    std::cout << "failed to change work mode, handle: " << handle << std::endl;
+    return;
+  }
+}
+
 void LivoxLidarCallback::SetDataTypeCallback(livox_status status, uint32_t handle,
                                              LivoxLidarAsyncControlResponse *response,
                                              void *client_data) {
