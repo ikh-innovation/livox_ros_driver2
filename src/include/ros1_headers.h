@@ -37,6 +37,11 @@
 #include <sensor_msgs/PointCloud2.h>
 #include "livox_ros_driver2/CustomMsg.h"
 #include "livox_ros_driver2/CustomPoint.h"
+#include "livox_ros_driver2/StateInfoMsg.h"
+#include "livox_ros_driver2/IpConfig.h"
+#include "livox_ros_driver2/HostIpConfig.h"
+#include "livox_ros_driver2/InstallAttitude.h"
+#include "livox_ros_driver2/FovConfig.h"
 
 
 #define DRIVER_DEBUG(node, ...) ROS_DEBUG(__VA_ARGS__)

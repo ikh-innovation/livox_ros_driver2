@@ -77,6 +77,259 @@ void PubHandler::SetImuDataCallback(ImuDataCallback cb, void* client_data) {
   imu_callback_ = cb;
 }
 
+void PubHandler::SetStateInfoCallback(StateInfoCallback cb, void* client_data) {
+  state_client_data_ = client_data;
+  state_callback_ = cb;
+  SetLivoxLidarInfoCallback(LivoxLidarPushMsgCallback, this);
+}
+
+void PubHandler::LivoxLidarPushMsgCallback(const uint32_t handle, const uint8_t dev_type, const char* info, void* client_data) {
+  PubHandler* self = (PubHandler*)client_data;
+  if (!self) {
+    return;
+  }
+  if (self->state_callback_) {
+      StateInfo state_info;
+      state_info.lidar_type = static_cast<uint8_t>(LidarProtoType::kLivoxLidarType);
+      state_info.handle = handle;
+
+      rapidjson::Document doc;
+      if (doc.Parse(info).HasParseError()) {
+        return;
+      }
+
+      if (doc.HasMember("pcl_data_type")) {
+        state_info.data.pcl_data_type = doc["pcl_data_type"].GetUint();
+      }
+
+      if (doc.HasMember("pattern_mode")) {
+        state_info.data.pattern_mode = doc["pattern_mode"].GetUint();
+      }
+
+      // if (doc.HasMember("dual_emit_en")) {
+      //   state_info.data.dual_emit_en = doc["dual_emit_en"].GetUint();
+      // }
+
+      // if (doc.HasMember("point_send_en")) {
+      //   state_info.data.point_send_en = doc["point_send_en"].GetUint();
+      // }
+
+      if (doc.HasMember("lidar_ipcfg")) {
+        const auto& lidar_ipcfg = doc["lidar_ipcfg"];
+        state_info.data.lidar_ipcfg.ip_addr = lidar_ipcfg["lidar_ip"].GetString();
+        state_info.data.lidar_ipcfg.net_mask = lidar_ipcfg["lidar_subnet_mask"].GetString();
+        state_info.data.lidar_ipcfg.gw_addr = lidar_ipcfg["lidar_gateway"].GetString();
+      }
+
+      if (doc.HasMember("state_info_host_ipcfg")) {
+        const auto& host_ipcfg = doc["state_info_host_ipcfg"];
+        state_info.data.info_host_ipcfg.ip_addr = host_ipcfg["ip"].GetString();
+        state_info.data.info_host_ipcfg.dst_port = host_ipcfg["dst_port"].GetUint();
+        state_info.data.info_host_ipcfg.src_port = host_ipcfg["src_port"].GetUint();
+      }
+
+      if (doc.HasMember("ponitcloud_host_ipcfg")) {
+        const auto& pointcloud_ipcfg = doc["ponitcloud_host_ipcfg"];
+        state_info.data.pointcloud_host_ipcfg.ip_addr = pointcloud_ipcfg["ip"].GetString();
+        state_info.data.pointcloud_host_ipcfg.dst_port = pointcloud_ipcfg["dst_port"].GetUint();
+        state_info.data.pointcloud_host_ipcfg.src_port = pointcloud_ipcfg["src_port"].GetUint();
+      }
+
+      if (doc.HasMember("imu_host_ipcfg")) {
+        const auto& imu_ipcfg = doc["imu_host_ipcfg"];
+        state_info.data.imu_host_ipcfg.ip_addr = imu_ipcfg["ip"].GetString();
+        state_info.data.imu_host_ipcfg.dst_port = imu_ipcfg["dst_port"].GetUint();
+        state_info.data.imu_host_ipcfg.src_port = imu_ipcfg["src_port"].GetUint();
+      }
+
+      // if (doc.HasMember("ctl_host_ipcfg")) {
+      //   const auto& ctl_ipcfg = doc["ctl_host_ipcfg"];
+      //   state_info.data.ctl_host_ipcfg.ip_addr = ctl_ipcfg["ip"].GetString();
+      //   state_info.data.ctl_host_ipcfg.dst_port = ctl_ipcfg["dst_port"].GetUint();
+      //   state_info.data.ctl_host_ipcfg.src_port = ctl_ipcfg["src_port"].GetUint();
+      // }
+
+      // if (doc.HasMember("log_host_ipcfg")) {
+      //   const auto& log_ipcfg = doc["log_host_ipcfg"];
+      //   state_info.data.log_host_ipcfg.ip_addr = log_ipcfg["ip"].GetString();
+      //   state_info.data.log_host_ipcfg.dst_port = log_ipcfg["dst_port"].GetUint();
+      //   state_info.data.log_host_ipcfg.src_port = log_ipcfg["src_port"].GetUint();
+      // }
+
+      // if (doc.HasMember("vehicle_speed")) {
+      //   state_info.data.vehicle_speed = doc["vehicle_speed"].GetInt();
+      // }
+
+      // if (doc.HasMember("environment_temp")) {
+      //   state_info.data.environment_temp = doc["environment_temp"].GetInt();
+      // }
+
+      if (doc.HasMember("install_attitude")) {
+        const auto& attitude = doc["install_attitude"];
+        state_info.data.install_attitude.roll_deg = attitude["roll_deg"].GetDouble();
+        state_info.data.install_attitude.pitch_deg = attitude["pitch_deg"].GetDouble();
+        state_info.data.install_attitude.yaw_deg = attitude["yaw_deg"].GetDouble();
+        state_info.data.install_attitude.x = attitude["x_mm"].GetUint();
+        state_info.data.install_attitude.y = attitude["y_mm"].GetUint();
+        state_info.data.install_attitude.z = attitude["z_mm"].GetUint();
+      }
+
+      // if (doc.HasMember("blind_spot_set")) {
+      //   state_info.data.blind_spot_set = doc["blind_spot_set"].GetUint();
+      // }
+
+      // if (doc.HasMember("frame_rate")) {
+      //   state_info.data.frame_rate = doc["frame_rate"].GetUint();
+      // }
+
+      if (doc.HasMember("fov_cfg0")) {
+        const auto& fov_cfg0 = doc["fov_cfg0"];
+        state_info.data.fov_cfg0.yaw_start = fov_cfg0["yaw_start"].GetInt();
+        state_info.data.fov_cfg0.yaw_stop = fov_cfg0["yaw_stop"].GetInt();
+        state_info.data.fov_cfg0.pitch_start = fov_cfg0["pitch_start"].GetInt();
+        state_info.data.fov_cfg0.pitch_stop = fov_cfg0["pitch_stop"].GetInt();
+      }
+
+      if (doc.HasMember("fov_cfg1")) {
+        const auto& fov_cfg1 = doc["fov_cfg1"];
+        state_info.data.fov_cfg1.yaw_start = fov_cfg1["yaw_start"].GetInt();
+        state_info.data.fov_cfg1.yaw_stop = fov_cfg1["yaw_stop"].GetInt();
+        state_info.data.fov_cfg1.pitch_start = fov_cfg1["pitch_start"].GetInt();
+        state_info.data.fov_cfg1.pitch_stop = fov_cfg1["pitch_stop"].GetInt();
+      }
+
+      if (doc.HasMember("fov_cfg_en")) {
+        state_info.data.fov_cfg_en = doc["fov_cfg_en"].GetUint();
+      }
+
+      if (doc.HasMember("detect_mode")) {
+        state_info.data.detect_mode = doc["detect_mode"].GetUint();
+      }
+
+      if (doc.HasMember("func_io_cfg")) {
+        const auto& func_io_cfg = doc["func_io_cfg"];
+        state_info.data.func_io_cfg[0] = func_io_cfg["IN0"].GetUint();
+        state_info.data.func_io_cfg[1] = func_io_cfg["IN1"].GetUint();
+        state_info.data.func_io_cfg[2] = func_io_cfg["OUT0"].GetUint();
+        state_info.data.func_io_cfg[3] = func_io_cfg["OUT1"].GetUint();
+      }
+
+      if (doc.HasMember("work_tgt_mode")) {
+        state_info.data.work_tgt_mode = doc["work_tgt_mode"].GetUint();
+      }
+
+      // if (doc.HasMember("glass_heat")) {
+      //   state_info.data.glass_heat = doc["glass_heat"].GetUint();
+      // }
+
+      if (doc.HasMember("imu_data_en")) {
+        state_info.data.imu_data_en = doc["imu_data_en"].GetUint();
+      }
+
+      // if (doc.HasMember("fusa_en")) {
+      //   state_info.data.fusa_en = doc["fusa_en"].GetUint();
+      // }
+
+      if (doc.HasMember("sn")) {
+        state_info.data.sn = doc["sn"].GetString();
+      }
+
+      if (doc.HasMember("product_info")) {
+        state_info.data.product_info = doc["product_info"].GetString();
+      }
+
+      if (doc.HasMember("version_app")) {
+        const auto& version_app = doc["version_app"];
+        for (rapidjson::SizeType i = 0; i < version_app.Size(); ++i) {
+          state_info.data.version_app[i] = version_app[i].GetUint();
+        }
+      }
+
+      if (doc.HasMember("version_loader")) {
+        const auto& version_loader = doc["version_loader"];
+        for (rapidjson::SizeType i = 0; i < version_loader.Size(); ++i) {
+          state_info.data.version_loader[i] = version_loader[i].GetUint();
+        }
+      }
+
+      if (doc.HasMember("version_hardware")) {
+        const auto& version_hardware = doc["version_hardware"];
+        for (rapidjson::SizeType i = 0; i < version_hardware.Size(); ++i) {
+          state_info.data.version_hardware[i] = version_hardware[i].GetUint();
+        }
+      }
+
+      if (doc.HasMember("mac")) {
+        const auto& mac = doc["mac"];
+        for (rapidjson::SizeType i = 0; i < mac.Size(); ++i) {
+          state_info.data.mac[i] = mac[i].GetUint();
+        }
+      }
+
+      if (doc.HasMember("cur_work_state")) {
+        state_info.data.cur_work_state = doc["cur_work_state"].GetUint();
+      }
+
+      if (doc.HasMember("core_temp")) {
+        state_info.data.core_temp = doc["core_temp"].GetInt();
+      }
+
+      if (doc.HasMember("powerup_cnt")) {
+        state_info.data.powerup_cnt = doc["powerup_cnt"].GetUint();
+      }
+
+      if (doc.HasMember("local_time_now")) {
+        state_info.data.local_time_now = doc["local_time_now"].GetUint64();
+      }
+
+      if (doc.HasMember("last_sync_time")) {
+        state_info.data.last_sync_time = doc["last_sync_time"].GetUint64();
+      }
+
+      if (doc.HasMember("time_offset")) {
+        state_info.data.time_offset = doc["time_offset"].GetInt64();
+      }
+
+      if (doc.HasMember("time_sync_type")) {
+        state_info.data.time_sync_type = doc["time_sync_type"].GetUint();
+      }
+
+      // if (doc.HasMember("status_code")) {
+      //   std::istringstream ss(doc["status_code"].GetString());
+      //   for (int idx = 31; idx >= 0; --idx) {
+      //     ss >> std::hex >> state_info.data.status_code[idx];
+      //   }
+      // }
+
+      if (doc.HasMember("lidar_diag_status")) {
+        state_info.data.lidar_diag_status = doc["lidar_diag_status"].GetUint();
+      }
+
+      // if (doc.HasMember("lidar_flash_status")) {
+      //   state_info.data.lidar_flash_status = doc["lidar_flash_status"].GetUint();
+      // }
+
+      if (doc.HasMember("FW_TYPE")) {
+        state_info.data.fw_type = doc["FW_TYPE"].GetUint();
+      }
+
+      if (doc.HasMember("hms_code")) {
+        const auto& hms_code = doc["hms_code"];
+        for (rapidjson::SizeType i = 0; i < hms_code.Size(); ++i) {
+          state_info.data.hms_code[i] = hms_code[i].GetUint();
+        }
+      }
+
+      // if (doc.HasMember("ROI_Mode")) {
+      //   state_info.data.ROI_Mode = doc["ROI_Mode"].GetUint();
+      // }
+
+      self->state_callback_(&state_info, self->state_client_data_);
+    }
+
+  return;
+}
+
 void PubHandler::AddLidarsExtParam(LidarExtParameter& lidar_param) {
   std::unique_lock<std::mutex> lock(packet_mutex_);
   uint32_t id = 0;

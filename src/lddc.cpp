@@ -55,8 +55,10 @@ Lddc::Lddc(int format, int multi_topic, int data_src, int output_type,
   lds_ = nullptr;
   memset(private_pub_, 0, sizeof(private_pub_));
   memset(private_imu_pub_, 0, sizeof(private_imu_pub_));
+  memset(private_state_info_pub_, 0, sizeof(private_state_info_pub_));
   global_pub_ = nullptr;
   global_imu_pub_ = nullptr;
+  global_state_info_pub_ = nullptr;
   cur_node_ = nullptr;
   bag_ = nullptr;
 }
@@ -159,6 +161,28 @@ void Lddc::DistributeImuData(void) {
   }
 }
 
+void Lddc::DistributeStateInfo(void) {
+  if (!lds_) {
+    std::cout << "lds is not registered" << std::endl;
+    return;
+  }
+  if (lds_->IsRequestExit()) {
+    std::cout << "DistributeStateInfo is RequestExit" << std::endl;
+    return;
+  }
+  
+  lds_->state_info_semaphore_.Wait();
+  for (uint32_t i = 0; i < lds_->lidar_count_; i++) {
+    uint32_t lidar_id = i;
+    LidarDevice *lidar = &lds_->lidars_[lidar_id];
+    LidarStateInfoQueue *p_queue = &lidar->state_info;
+    if (p_queue == nullptr) {
+      continue;
+    }
+    PollingLidarStateInfo(lidar_id, lidar);
+  }
+}
+
 void Lddc::PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar) {
   LidarDataQueue *p_queue = &lidar->data;
   if (p_queue == nullptr || p_queue->storage_packet == nullptr) {
@@ -180,6 +204,13 @@ void Lddc::PollingLidarImuData(uint8_t index, LidarDevice *lidar) {
   LidarImuDataQueue& p_queue = lidar->imu_data;
   while (!lds_->IsRequestExit() && !p_queue.Empty()) {
     PublishImuData(p_queue, index);
+  }
+}
+
+void Lddc::PollingLidarStateInfo(uint8_t index, LidarDevice *lidar) {
+  LidarStateInfoQueue& p_queue = lidar->state_info;
+  while (!lds_->IsRequestExit() && !p_queue.Empty()) {
+    PublishStateInfo(p_queue, index);
   }
 }
 
@@ -523,6 +554,125 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
   }
 }
 
+
+void Lddc::PublishStateInfo(LidarStateInfoQueue& state_info_queue, const uint8_t index) {
+  StateInfo state_info;
+  if (!state_info_queue.Pop(state_info)) {
+    //printf("Publish state info failed, state info queue pop failed.\n");
+    return;
+  }
+
+  StateInfoMsg state_info_msg;
+
+  state_info_msg.pcl_data_type = state_info.data.pcl_data_type;
+  state_info_msg.pattern_mode = state_info.data.pattern_mode;
+  // state_info_msg.dual_emit_en = state_info.data.dual_emit_en;
+  // state_info_msg.point_send_en = state_info.data.point_send_en;
+
+  state_info_msg.lidar_ipcfg.ip_addr = state_info.data.lidar_ipcfg.ip_addr;
+  state_info_msg.lidar_ipcfg.net_mask = state_info.data.lidar_ipcfg.net_mask;
+  state_info_msg.lidar_ipcfg.gw_addr = state_info.data.lidar_ipcfg.gw_addr;
+
+  state_info_msg.info_host_ipcfg.ip_addr = state_info.data.info_host_ipcfg.ip_addr;
+  state_info_msg.info_host_ipcfg.dst_port = state_info.data.info_host_ipcfg.dst_port;
+  state_info_msg.info_host_ipcfg.src_port = state_info.data.info_host_ipcfg.src_port;
+
+  state_info_msg.pointcloud_host_ipcfg.ip_addr = state_info.data.pointcloud_host_ipcfg.ip_addr;
+  state_info_msg.pointcloud_host_ipcfg.dst_port = state_info.data.pointcloud_host_ipcfg.dst_port;
+  state_info_msg.pointcloud_host_ipcfg.src_port = state_info.data.pointcloud_host_ipcfg.src_port;
+
+  state_info_msg.imu_host_ipcfg.ip_addr = state_info.data.imu_host_ipcfg.ip_addr;
+  state_info_msg.imu_host_ipcfg.dst_port = state_info.data.imu_host_ipcfg.dst_port;
+  state_info_msg.imu_host_ipcfg.src_port = state_info.data.imu_host_ipcfg.src_port;
+
+  // state_info_msg.ctl_host_ipcfg.ip_addr = state_info.data.ctl_host_ipcfg.ip_addr;
+  // state_info_msg.ctl_host_ipcfg.dst_port = state_info.data.ctl_host_ipcfg.dst_port;
+  // state_info_msg.ctl_host_ipcfg.src_port = state_info.data.ctl_host_ipcfg.src_port;
+
+  // state_info_msg.log_host_ipcfg.ip_addr = state_info.data.log_host_ipcfg.ip_addr;
+  // state_info_msg.log_host_ipcfg.dst_port = state_info.data.log_host_ipcfg.dst_port;
+  // state_info_msg.log_host_ipcfg.src_port = state_info.data.log_host_ipcfg.src_port;
+
+  // state_info_msg.vehicle_speed = state_info.data.vehicle_speed;
+  // state_info_msg.environment_temp = state_info.data.environment_temp;
+
+  state_info_msg.install_attitude.roll_deg = state_info.data.install_attitude.roll_deg;
+  state_info_msg.install_attitude.pitch_deg = state_info.data.install_attitude.pitch_deg;
+  state_info_msg.install_attitude.yaw_deg = state_info.data.install_attitude.yaw_deg;
+  state_info_msg.install_attitude.x = state_info.data.install_attitude.x;
+  state_info_msg.install_attitude.y = state_info.data.install_attitude.y;
+  state_info_msg.install_attitude.z = state_info.data.install_attitude.z;
+
+  // state_info_msg.blind_spot_set = state_info.data.blind_spot_set;
+  // state_info_msg.frame_rate = state_info.data.frame_rate;
+
+  state_info_msg.fov_cfg0.yaw_start = state_info.data.fov_cfg0.yaw_start;
+  state_info_msg.fov_cfg0.yaw_stop = state_info.data.fov_cfg0.yaw_stop;
+  state_info_msg.fov_cfg0.pitch_start = state_info.data.fov_cfg0.pitch_start;
+  state_info_msg.fov_cfg0.pitch_stop = state_info.data.fov_cfg0.pitch_stop;
+
+  state_info_msg.fov_cfg1.yaw_start = state_info.data.fov_cfg1.yaw_start;
+  state_info_msg.fov_cfg1.yaw_stop = state_info.data.fov_cfg1.yaw_stop;
+  state_info_msg.fov_cfg1.pitch_start = state_info.data.fov_cfg1.pitch_start;
+  state_info_msg.fov_cfg1.pitch_stop = state_info.data.fov_cfg1.pitch_stop;
+
+  state_info_msg.fov_cfg_en = state_info.data.fov_cfg_en;
+  state_info_msg.detect_mode = state_info.data.detect_mode;
+
+  for (size_t i = 0; i < 4; ++i) {
+    state_info_msg.func_io_cfg[i] = state_info.data.func_io_cfg[i];
+  }
+
+  state_info_msg.work_tgt_mode = state_info.data.work_tgt_mode;
+  // state_info_msg.glass_heat = state_info.data.glass_heat;
+  state_info_msg.imu_data_en = state_info.data.imu_data_en;
+  // state_info_msg.fusa_en = state_info.data.fusa_en;
+  state_info_msg.sn = state_info.data.sn;
+  state_info_msg.product_info = state_info.data.product_info;
+
+  for (size_t i = 0; i < 4; ++i) {
+    state_info_msg.version_app[i] = state_info.data.version_app[i];
+    state_info_msg.version_loader[i] = state_info.data.version_loader[i];
+    state_info_msg.version_hardware[i] = state_info.data.version_hardware[i];
+  }
+
+  for (size_t i = 0; i < 6; ++i) {
+    state_info_msg.mac[i] = state_info.data.mac[i];
+  }
+
+  state_info_msg.cur_work_state = state_info.data.cur_work_state;
+  state_info_msg.core_temp = state_info.data.core_temp;
+  state_info_msg.powerup_cnt = state_info.data.powerup_cnt;
+  state_info_msg.local_time_now = state_info.data.local_time_now;
+  state_info_msg.last_sync_time = state_info.data.last_sync_time;
+  state_info_msg.time_offset = state_info.data.time_offset;
+  state_info_msg.time_sync_type = state_info.data.time_sync_type;
+
+  // for (size_t i = 0; i < 32; ++i) {
+  //   state_info_msg.status_code[i] = state_info.data.status_code[i];
+  // }
+
+  state_info_msg.lidar_diag_status = state_info.data.lidar_diag_status;
+  // state_info_msg.lidar_flash_status = state_info.data.lidar_flash_status;
+  state_info_msg.fw_type = state_info.data.fw_type;
+
+  for (size_t i = 0; i < 8; ++i) {
+    state_info_msg.hms_code[i] = state_info.data.hms_code[i];
+  }
+
+  // state_info_msg.ROI_Mode = state_info.data.ROI_Mode;
+
+#ifdef BUILDING_ROS1
+  PublisherPtr publisher_ptr = GetCurrentStateInfoPublisher(index);
+#elif defined BUILDING_ROS2
+  Publisher<ImuMsg>::SharedPtr publisher_ptr = std::dynamic_pointer_cast<Publisher<ImuMsg>>(GetCurrentImuPublisher(index));
+#endif
+
+  if (kOutputToRos == output_type_) {
+    publisher_ptr->publish(state_info_msg);
+  }
+}
+
 #ifdef BUILDING_ROS2
 std::shared_ptr<rclcpp::PublisherBase> Lddc::CreatePublisher(uint8_t msg_type,
     std::string &topic_name, uint32_t queue_size) {
@@ -633,6 +783,41 @@ PublisherPtr Lddc::GetCurrentImuPublisher(uint8_t handle) {
     *pub = new ros::Publisher;
     **pub = cur_node_->GetNode().advertise<sensor_msgs::Imu>(name_str, queue_size);
     DRIVER_INFO(*cur_node_, "%s publish imu data, set ROS publisher queue size %d", name_str,
+             queue_size);
+  }
+
+  return *pub;
+}
+
+
+PublisherPtr Lddc::GetCurrentStateInfoPublisher(uint8_t handle) {
+  ros::Publisher **pub = nullptr;
+  uint32_t queue_size = kMinEthPacketQueueSize;
+
+  if (use_multi_topic_) {
+    pub = &private_state_info_pub_[handle];
+    queue_size = queue_size * 2; // queue size is 64 for only one lidar
+  } else {
+    pub = &global_state_info_pub_;
+    queue_size = queue_size * 8; // shared queue size is 256, for all lidars
+  }
+
+  if (*pub == nullptr) {
+    char name_str[48];
+    memset(name_str, 0, sizeof(name_str));
+    if (use_multi_topic_) {
+      DRIVER_INFO(*cur_node_, "Support multi topics.");
+      std::string ip_string = IpNumToString(lds_->lidars_[handle].handle);
+      snprintf(name_str, sizeof(name_str), "livox/info_%s",
+               ReplacePeriodByUnderline(ip_string).c_str());
+    } else {
+      DRIVER_INFO(*cur_node_, "Support only one topic.");
+      snprintf(name_str, sizeof(name_str), "livox/info");
+    }
+
+    *pub = new ros::Publisher;
+    **pub = cur_node_->GetNode().advertise<livox_ros_driver2::StateInfoMsg>(name_str, queue_size);
+    DRIVER_INFO(*cur_node_, "%s publish state info, set ROS publisher queue size %d", name_str,
              queue_size);
   }
 

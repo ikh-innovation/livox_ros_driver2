@@ -55,6 +55,7 @@ using PointField = sensor_msgs::PointField;
 using CustomMsg = livox_ros_driver2::CustomMsg;
 using CustomPoint = livox_ros_driver2::CustomPoint;
 using ImuMsg = sensor_msgs::Imu;
+using StateInfoMsg = livox_ros_driver2::StateInfoMsg;
 #elif defined BUILDING_ROS2
 template <typename MessageT> using Publisher = rclcpp::Publisher<MessageT>;
 using PublisherPtr = std::shared_ptr<rclcpp::PublisherBase>;
@@ -83,6 +84,7 @@ class Lddc final {
   int RegisterLds(Lds *lds);
   void DistributePointCloudData(void);
   void DistributeImuData(void);
+  void DistributeStateInfo(void);
   void CreateBagFile(const std::string &file_name);
   void PrepareExit(void);
 
@@ -99,12 +101,15 @@ class Lddc final {
  private:
   void PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar);
   void PollingLidarImuData(uint8_t index, LidarDevice *lidar);
+  void PollingLidarStateInfo(uint8_t index, LidarDevice *lidar);
 
   void PublishPointcloud2(LidarDataQueue *queue, uint8_t index);
   void PublishCustomPointcloud(LidarDataQueue *queue, uint8_t index);
   void PublishPclMsg(LidarDataQueue *queue, uint8_t index);
 
   void PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index);
+
+  void PublishStateInfo(LidarStateInfoQueue& state_info_queue, const uint8_t index);
 
   void InitPointcloud2MsgHeader(PointCloud2& cloud);
   void InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint64_t& timestamp);
@@ -130,6 +135,7 @@ class Lddc final {
 
   PublisherPtr GetCurrentPublisher(uint8_t index);
   PublisherPtr GetCurrentImuPublisher(uint8_t index);
+  PublisherPtr GetCurrentStateInfoPublisher(uint8_t index);
 
  private:
   uint8_t transfer_format_;
@@ -147,6 +153,8 @@ class Lddc final {
   PublisherPtr global_pub_;
   PublisherPtr private_imu_pub_[kMaxSourceLidar];
   PublisherPtr global_imu_pub_;
+  PublisherPtr private_state_info_pub_[kMaxSourceLidar];
+  PublisherPtr global_state_info_pub_;
   rosbag::Bag *bag_;
 #elif defined BUILDING_ROS2
   PublisherPtr private_pub_[kMaxSourceLidar];

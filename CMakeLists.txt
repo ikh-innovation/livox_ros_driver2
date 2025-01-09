@@ -47,6 +47,11 @@ if(ROS_EDITION STREQUAL "ROS1")
   add_message_files(FILES
     CustomPoint.msg
     CustomMsg.msg
+    FovConfig.msg
+    HostIpConfig.msg
+    IpConfig.msg
+    InstallAttitude.msg
+    StateInfoMsg.msg
   #   Message2.msg
   )
 
@@ -131,6 +136,7 @@ if(ROS_EDITION STREQUAL "ROS1")
     src/comm/ldq.cpp
     src/comm/semaphore.cpp
     src/comm/lidar_imu_data_queue.cpp
+    src/comm/lidar_state_info_queue.cpp
     src/comm/cache_index.cpp
     src/comm/pub_handler.cpp
 
@@ -241,6 +247,11 @@ else(ROS_EDITION STREQUAL "ROS2")
   rosidl_generate_interfaces(${LIVOX_INTERFACES}
     "msg/CustomPoint.msg"
     "msg/CustomMsg.msg"
+    "msg/FovConfig.msg"
+    "msg/HostIpConfig.msg"
+    "msg/IpConfig.msg"
+    "msg/InstallAttitude.msg"
+    "msg/StateInfoMsg.msg"
     DEPENDENCIES builtin_interfaces std_msgs
     LIBRARY_NAME ${PROJECT_NAME}
   )

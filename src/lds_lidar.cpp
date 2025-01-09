@@ -186,6 +186,7 @@ bool LdsLidar::InitLivoxLidar() {
 void LdsLidar::SetLidarPubHandle() {
   pub_handler().SetPointCloudsCallback(LidarCommonCallback::OnLidarPointClounCb, g_lds_ldiar);
   pub_handler().SetImuDataCallback(LidarCommonCallback::LidarImuDataCallback, g_lds_ldiar);
+  pub_handler().SetStateInfoCallback(LidarCommonCallback::LidarStateInfoCallback, g_lds_ldiar);
 
   double publish_freq = Lds::GetLdsFrequency();
   pub_handler().SetPointCloudConfig(publish_freq);
@@ -202,6 +203,13 @@ int LdsLidar::DeInitLdsLidar(void) {
   }
 
   if (lidar_summary_info_.lidar_type & kLivoxLidarType) {
+    for (int i = 0; i < g_lds_ldiar->lidar_count_; i++) {
+      LidarDevice * p_lidar = &(lidars_[i]);
+      if (p_lidar->lidar_type & kLivoxLidarType) {
+        uint32_t handle = p_lidar->handle;
+        SetLivoxLidarWorkMode(handle, kLivoxLidarWakeUp, LivoxLidarCallback::WorkModeChangeOnceCallback, nullptr);
+      }
+    }
     LivoxLidarSdkUninit();
     printf("Livox Lidar SDK Deinit completely!\n");
   }

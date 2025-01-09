@@ -41,6 +41,7 @@ Lds::Lds(const double publish_freq, const uint8_t data_src)
     : lidar_count_(kMaxSourceLidar),
       pcd_semaphore_(0),
       imu_semaphore_(0),
+      state_info_semaphore_(0),
       publish_freq_(publish_freq),
       data_src_(data_src),
       request_exit_(false) {
@@ -57,6 +58,7 @@ void Lds::ResetLidar(LidarDevice *lidar, uint8_t data_src) {
   //cache_index_.ResetIndex(lidar);
   DeInitQueue(&lidar->data);
   lidar->imu_data.Clear();
+  lidar->state_info.Clear();
 
   lidar->data_src = data_src;
   lidar->connect_state = kConnectStateOff;
@@ -118,6 +120,32 @@ void Lds::StorageImuData(ImuData* imu_data) {
   if (!imu_queue->Empty()) {
     if (imu_semaphore_.GetCount() <= 0) {
       imu_semaphore_.Signal();
+    }
+  }
+}
+
+void Lds::StorageStateInfo(StateInfo* state_info) {
+  uint32_t device_num = 0;
+  if (state_info->lidar_type == kLivoxLidarType) {
+    device_num = state_info->handle;
+  } else {
+    printf("Storage state info failed, unknown lidar type:%u.\n", state_info->lidar_type);
+    return;
+  }
+
+  uint8_t index = 0;
+  int ret = cache_index_.GetIndex(state_info->lidar_type, device_num, index);
+  if (ret != 0) {
+    printf("Storage state info failed, can not get index, lidar type:%u, device_num:%u.\n", state_info->lidar_type, device_num);
+    return;
+  }
+
+  LidarDevice *p_lidar = &lidars_[index];
+  LidarStateInfoQueue* state_info_queue = &p_lidar->state_info;
+  state_info_queue->Push(state_info);
+  if (!state_info_queue->Empty()) {
+    if (state_info_semaphore_.GetCount() <= 0) {
+      state_info_semaphore_.Signal();
     }
   }
 }

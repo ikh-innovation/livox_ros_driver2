@@ -34,9 +34,12 @@
 #include <memory>
 #include <mutex>              // std::mutex
 #include <thread>
+#include <sstream>
 
 #include "livox_lidar_def.h"
 #include "livox_lidar_api.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/document.h"
 #include "comm/comm.h"
 
 namespace livox_ros {
@@ -76,6 +79,7 @@ class PubHandler {
  public:
   using PointCloudsCallback = std::function<void(PointFrame*, void *)>;
   using ImuDataCallback = std::function<void(ImuData*, void*)>;
+  using StateInfoCallback = std::function<void(StateInfo*, void*)>;
   using TimePoint = std::chrono::high_resolution_clock::time_point;
 
   PubHandler() {}
@@ -90,6 +94,7 @@ class PubHandler {
   void AddLidarsExtParam(LidarExtParameter& extrinsic_params);
   void ClearAllLidarsExtrinsicParams();
   void SetImuDataCallback(ImuDataCallback cb, void* client_data);
+  void SetStateInfoCallback(StateInfoCallback cb, void* client_data);
 
  private:
   //thread to process raw data
@@ -102,6 +107,7 @@ class PubHandler {
   //publish callback
   void CheckTimer(uint32_t id);
   void PublishPointCloud();
+  static void LivoxLidarPushMsgCallback(const uint32_t handle, const uint8_t dev_type, const char* info, void* client_data);
   static void OnLivoxLidarPointCloudCallback(uint32_t handle, const uint8_t dev_type,
                                              LivoxLidarEthernetPacket *data, void *client_data);
   
@@ -113,6 +119,9 @@ class PubHandler {
 
   ImuDataCallback imu_callback_;
   void* imu_client_data_ = nullptr;
+
+  StateInfoCallback state_callback_;
+  void* state_client_data_ = nullptr;
 
   PointFrame frame_;
 
