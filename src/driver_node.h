@@ -26,6 +26,8 @@
 #define LIVOX_DRIVER_NODE_H
 
 #include "include/ros_headers.h"
+#include "livox_lidar_def.h"
+#include <std_srvs/SetBool.h>
 
 namespace livox_ros {
 
@@ -44,13 +46,20 @@ class DriverNode final : public ros::NodeHandle {
   void PointCloudDataPollThread();
   void ImuDataPollThread();
   void StateInfoPollThread();
+  bool SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs::SetBool::Response &res);
+  static void WorkModeChangeOnceCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse *response, void *client_data);
 
   std::unique_ptr<Lddc> lddc_ptr_;
   std::shared_ptr<std::thread> pointclouddata_poll_thread_;
   std::shared_ptr<std::thread> imudata_poll_thread_;
   std::shared_ptr<std::thread> stateinfo_poll_thread_;
+  ros::ServiceServer sampling_service_;
   std::shared_future<void> future_;
   std::promise<void> exit_signal_;
+  std::condition_variable cv_;
+  std::mutex mtx_;
+  uint callbacks_done_;
+  bool callbacks_status_;
 };
 
 #elif defined BUILDING_ROS2

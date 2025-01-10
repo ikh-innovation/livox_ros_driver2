@@ -109,6 +109,8 @@ int main(int argc, char **argv) {
   livox_node.imudata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::ImuDataPollThread, &livox_node);
   livox_node.stateinfo_poll_thread_ = std::make_shared<std::thread>(&DriverNode::StateInfoPollThread, &livox_node);
 
+  livox_node.sampling_service_ = livox_node.GetNode().advertiseService("livox/enable_sampling", &DriverNode::SetSamplingCallback, &livox_node);
+
   ros::spin();
 	ros::waitForShutdown();
 
@@ -226,22 +228,49 @@ void DriverNode::StateInfoPollThread()
   } while (status == std::future_status::timeout);
 }
 
+bool DriverNode::SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs::SetBool::Response &res)
+{
+  LivoxLidarWorkMode desired_mode{req.data ? kLivoxLidarNormal : kLivoxLidarWakeUp};
+  
+  {
+    std::unique_lock<std::mutex> lock(mtx_);
+    callbacks_status_ = true;
+    callbacks_done_ = 0;
+  }
+  
+  uint8_t actual_lidar_count{0};
 
+  for (int i = 0; i < lddc_ptr_->lds_->lidar_count_; i++) 
+  {
+    LidarDevice * p_lidar = &(lddc_ptr_->lds_->lidars_[i]);
+    if (p_lidar->lidar_type & kLivoxLidarType) 
+    {
+      uint32_t handle = p_lidar->handle;
+      actual_lidar_count++;
+      SetLivoxLidarWorkMode(handle, desired_mode, DriverNode::WorkModeChangeOnceCallback, this);
+    }
+  }
 
+  {
+    std::unique_lock<std::mutex> lock(mtx_);
+    cv_.wait(lock, [this, actual_lidar_count]{ return (callbacks_done_ == actual_lidar_count); });
+  }
 
+  res.success = callbacks_status_;
+  res.message = res.success ? "Work mode changed successfully" : "Failed to change work mode";
+  return true;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void DriverNode::WorkModeChangeOnceCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse *response, void *client_data) 
+{
+  DriverNode* node = static_cast<DriverNode*>(client_data);
+  {
+    std::unique_lock<std::mutex> lock(node->mtx_);
+    if (status != kLivoxLidarStatusSuccess) 
+    {
+      node->callbacks_status_ = false;
+    }
+    node->callbacks_done_ = node->callbacks_done_ + 1;
+  }
+  node->cv_.notify_one();
+}
