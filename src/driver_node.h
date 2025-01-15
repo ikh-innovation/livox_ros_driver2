@@ -34,14 +34,14 @@ namespace livox_ros {
 class Lddc;
 
 #ifdef BUILDING_ROS1
-class DriverNode final : public ros::NodeHandle {
+class DriverNode final : public nodelet::Nodelet {
  public:
-  DriverNode() = default;
-  DriverNode(const DriverNode &) = delete;
-  ~DriverNode();
-  DriverNode &operator=(const DriverNode &) = delete;
+  // DriverNode() = default;
+  // DriverNode(const DriverNode &) = delete;
+  // ~DriverNode();
+  // DriverNode &operator=(const DriverNode &) = delete;
 
-  DriverNode& GetNode() noexcept;
+  // DriverNode& GetNode() noexcept;
 
   void PointCloudDataPollThread();
   void ImuDataPollThread();
@@ -60,6 +60,10 @@ class DriverNode final : public ros::NodeHandle {
   std::mutex mtx_;
   uint callbacks_done_;
   bool callbacks_status_;
+  ros::NodeHandle& nh;
+  ros::NodeHandle& private_nh;
+ private:
+  void onInit() override;
 };
 
 #elif defined BUILDING_ROS2

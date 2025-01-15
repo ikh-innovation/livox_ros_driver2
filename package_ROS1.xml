@@ -72,6 +72,8 @@
   <exec_depend>rosbag</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
 
+  <depend>nodelet</depend>
+  <depend>pluginlib</depend>
   <depend>sensor_msgs</depend>
   <depend>git</depend>
   <depend>apr</depend>

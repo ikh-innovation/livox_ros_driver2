@@ -743,18 +743,18 @@ PublisherPtr Lddc::GetCurrentPublisher(uint8_t index) {
     *pub = new ros::Publisher;
     if (kPointCloud2Msg == transfer_format_) {
       **pub =
-          cur_node_->GetNode().advertise<sensor_msgs::PointCloud2>(name_str, queue_size);
+          cur_node_->private_nh.advertise<sensor_msgs::PointCloud2>(name_str, queue_size);
       DRIVER_INFO(*cur_node_,
           "%s publish use PointCloud2 format, set ROS publisher queue size %d",
           name_str, queue_size);
     } else if (kLivoxCustomMsg == transfer_format_) {
-      **pub = cur_node_->GetNode().advertise<livox_ros_driver2::CustomMsg>(name_str,
+      **pub = cur_node_->private_nh.advertise<livox_ros_driver2::CustomMsg>(name_str,
                                                                 queue_size);
       DRIVER_INFO(*cur_node_,
           "%s publish use livox custom format, set ROS publisher queue size %d",
           name_str, queue_size);
     } else if (kPclPxyziMsg == transfer_format_) {
-      **pub = cur_node_->GetNode().advertise<PointCloud>(name_str, queue_size);
+      **pub = cur_node_->private_nh.advertise<PointCloud>(name_str, queue_size);
       DRIVER_INFO(*cur_node_,
           "%s publish use pcl PointXYZI format, set ROS publisher queue "
           "size %d",
@@ -791,7 +791,7 @@ PublisherPtr Lddc::GetCurrentImuPublisher(uint8_t handle) {
     }
 
     *pub = new ros::Publisher;
-    **pub = cur_node_->GetNode().advertise<sensor_msgs::Imu>(name_str, queue_size);
+    **pub = cur_node_->private_nh.advertise<sensor_msgs::Imu>(name_str, queue_size);
     DRIVER_INFO(*cur_node_, "%s publish imu data, set ROS publisher queue size %d", name_str,
              queue_size);
   }
@@ -826,7 +826,7 @@ PublisherPtr Lddc::GetCurrentStateInfoPublisher(uint8_t handle) {
     }
 
     *pub = new ros::Publisher;
-    **pub = cur_node_->GetNode().advertise<livox_ros_driver2::StateInfoMsg>(name_str, queue_size);
+    **pub = cur_node_->private_nh.advertise<livox_ros_driver2::StateInfoMsg>(name_str, queue_size);
     DRIVER_INFO(*cur_node_, "%s publish state info, set ROS publisher queue size %d", name_str,
              queue_size);
   }

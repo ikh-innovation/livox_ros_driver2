@@ -39,6 +39,8 @@ if(ROS_EDITION STREQUAL "ROS1")
     message_generation
     rosbag
     pcl_ros
+    nodelet
+    pluginlib
   )
 
   ## Find pcl lib
@@ -77,9 +79,10 @@ if(ROS_EDITION STREQUAL "ROS1")
   ## LIBRARIES: libraries you create in this project that dependent projects als    o need
   ## CATKIN_DEPENDS: catkin_packages dependent projects also need
   ## DEPENDS: system dependencies of this project that dependent projects also n    eed
-  catkin_package(CATKIN_DEPENDS
-    roscpp rospy std_msgs message_runtime
-    pcl_ros
+  catkin_package(
+    INCLUDE_DIRS src/include
+    LIBRARIES ${PROJECT_NAME}_nodelet
+    CATKIN_DEPENDS roscpp rospy std_msgs message_runtime nodelet pcl_ros
   )
 
   #---------------------------------------------------------------------------------------
@@ -106,27 +109,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   #---------------------------------------------------------------------------------------
   # generate excutable and add libraries
   #---------------------------------------------------------------------------------------
-  add_executable(${PROJECT_NAME}_node
-    ""
-  )
-
-  #---------------------------------------------------------------------------------------
-  # precompile macro and compile option
-  #---------------------------------------------------------------------------------------
-  target_compile_options(${PROJECT_NAME}_node
-    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
-  )
-
-  #---------------------------------------------------------------------------------------
-  # add projects that depend on
-  #---------------------------------------------------------------------------------------
-  add_dependencies(${PROJECT_NAME}_node ${PROJECT_NAME}_generate_messages_cpp)
-
-  #---------------------------------------------------------------------------------------
-  # source file
-  #---------------------------------------------------------------------------------------
-  target_sources(${PROJECT_NAME}_node
-    PRIVATE
+  add_library(${PROJECT_NAME}_nodelet
     src/driver_node.cpp
     src/lds.cpp
     src/lds_lidar.cpp
@@ -147,11 +130,25 @@ if(ROS_EDITION STREQUAL "ROS1")
     src/call_back/lidar_common_callback.cpp
     src/call_back/livox_lidar_callback.cpp
   )
+  
+
+  #---------------------------------------------------------------------------------------
+  # precompile macro and compile option
+  #---------------------------------------------------------------------------------------
+  target_compile_options(${PROJECT_NAME}_nodelet
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
+  #---------------------------------------------------------------------------------------
+  # add projects that depend on
+  #---------------------------------------------------------------------------------------
+  add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_generate_messages_cpp)
+
 
   #---------------------------------------------------------------------------------------
   # include file
   #---------------------------------------------------------------------------------------
-  target_include_directories(${PROJECT_NAME}_node
+  target_include_directories(${PROJECT_NAME}_nodelet
     PUBLIC
     ${catkin_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
@@ -163,7 +160,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   #---------------------------------------------------------------------------------------
   # link libraries
   #---------------------------------------------------------------------------------------
-  target_link_libraries(${PROJECT_NAME}_node
+  target_link_libraries(${PROJECT_NAME}_nodelet
     ${LIVOX_LIDAR_SDK_LIBRARY}
     ${Boost_LIBRARY}
     ${catkin_LIBRARIES}
@@ -176,7 +173,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   # Install
   #---------------------------------------------------------------------------------------
 
-  install(TARGETS ${PROJECT_NAME}_node
+  install(TARGETS ${PROJECT_NAME}_nodelet
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -184,6 +181,10 @@ if(ROS_EDITION STREQUAL "ROS1")
 
   install(DIRECTORY launch_ROS1/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch_ROS1
+  )
+
+  install(FILES ${PROJECT_NAME}_nodelet.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
 
   #---------------------------------------------------------------------------------------
