@@ -39,7 +39,7 @@ namespace livox_ros {
  */
 class Lds {
  public:
-  Lds(const double publish_freq, const uint8_t data_src);
+  Lds(const double publish_freq, const bool start_at_startup, const uint8_t data_src);
   virtual ~Lds();
 
   void StorageImuData(ImuData* imu_data);
@@ -73,6 +73,7 @@ class Lds {
   Semaphore imu_semaphore_;
   Semaphore state_info_semaphore_;
   static CacheIndex cache_index_;
+  bool sample_at_startup_;
  protected:
   double publish_freq_;
   uint8_t data_src_;

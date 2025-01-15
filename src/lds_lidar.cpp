@@ -61,8 +61,8 @@ LdsLidar *g_lds_ldiar = nullptr;
 /** Global function for common use -------------------------------------------*/
 
 /** Lds lidar function -------------------------------------------------------*/
-LdsLidar::LdsLidar(double publish_freq)
-    : Lds(publish_freq, kSourceRawLidar), 
+LdsLidar::LdsLidar(double publish_freq, const bool start_at_startup)
+    : Lds(publish_freq, start_at_startup, kSourceRawLidar), 
       auto_connect_mode_(true),
       whitelist_count_(0),
       is_initialized_(false) {
@@ -73,8 +73,6 @@ LdsLidar::LdsLidar(double publish_freq)
 LdsLidar::~LdsLidar() {}
 
 void LdsLidar::ResetLdsLidar(void) { ResetLds(kSourceRawLidar); }
-
-
 
 bool LdsLidar::InitLdsLidar(const std::string& path_name) {
   if (is_initialized_) {

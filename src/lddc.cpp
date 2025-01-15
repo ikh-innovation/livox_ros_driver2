@@ -88,6 +88,10 @@ Lddc::~Lddc() {
   if (global_imu_pub_) {
     delete global_imu_pub_;
   }
+
+  if (global_state_info_pub_) {
+    delete global_state_info_pub_;
+  }
 #endif
 
   PrepareExit();
@@ -102,6 +106,12 @@ Lddc::~Lddc() {
   for (uint32_t i = 0; i < kMaxSourceLidar; i++) {
     if (private_imu_pub_[i]) {
       delete private_imu_pub_[i];
+    }
+  }
+
+  for (uint32_t i = 0; i < kMaxSourceLidar; i++) {
+    if (private_state_info_pub_[i]) {
+      delete private_state_info_pub_[i];
     }
   }
 #endif

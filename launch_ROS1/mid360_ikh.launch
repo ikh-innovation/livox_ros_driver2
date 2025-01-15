@@ -15,6 +15,7 @@
 	<arg name="msg_frame_id" default="livox_frame"/>
 	<arg name="lidar_bag" default="false"/>
 	<arg name="imu_bag" default="false"/>
+	<arg name="sample_at_startup" default="false"/>
 	<arg name="config_file" default="$(find livox_ros_driver2)/config/MID360_config.json"/>
 	<!--user configure parameters for ros end--> 
 
@@ -29,6 +30,7 @@
 	<param name="frame_id" type="string" value="$(arg msg_frame_id)"/>
 	<param name="enable_lidar_bag" type="bool" value="$(arg lidar_bag)"/>
 	<param name="enable_imu_bag" type="bool" value="$(arg imu_bag)"/>
+	<param name="sample_at_startup" type="bool" value="$(arg sample_at_startup)"/>
 
 	<node name="livox_lidar_publisher2" pkg="livox_ros_driver2" type="livox_ros_driver2_node" required="true" output="screen" args="$(arg cmdline_arg)"/>
 

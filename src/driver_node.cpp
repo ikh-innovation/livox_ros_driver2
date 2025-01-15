@@ -34,9 +34,15 @@ DriverNode& DriverNode::GetNode() noexcept {
 DriverNode::~DriverNode() {
   lddc_ptr_->lds_->RequestExit();
   exit_signal_.set_value();
-  pointclouddata_poll_thread_->join();
-  imudata_poll_thread_->join();
-  stateinfo_poll_thread_->join();
+  if (pointclouddata_poll_thread_!=nullptr && pointclouddata_poll_thread_->joinable()) {
+    pointclouddata_poll_thread_->join();
+  }
+  if (imudata_poll_thread_!=nullptr && imudata_poll_thread_->joinable()) {
+    imudata_poll_thread_->join();
+  }
+  if (stateinfo_poll_thread_!=nullptr &&  stateinfo_poll_thread_->joinable()) {
+    stateinfo_poll_thread_->join();
+  }
 }
 
 } // namespace livox_ros

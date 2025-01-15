@@ -43,9 +43,9 @@ namespace livox_ros {
 
 class LdsLidar final : public Lds {
  public:
-  static LdsLidar *GetInstance(double publish_freq) {
+  static LdsLidar *GetInstance(double publish_freq, bool start_at_startup) {
     printf("LdsLidar *GetInstance\n");
-    static LdsLidar lds_lidar(publish_freq);
+    static LdsLidar lds_lidar(publish_freq, start_at_startup);
     return &lds_lidar;
   }
 
@@ -54,7 +54,7 @@ class LdsLidar final : public Lds {
 
   int DeInitLdsLidar(void);
  private:
-  LdsLidar(double publish_freq);
+  LdsLidar(double publish_freq, bool start_at_startup);
   LdsLidar(const LdsLidar &) = delete;
   ~LdsLidar();
   LdsLidar &operator=(const LdsLidar &) = delete;

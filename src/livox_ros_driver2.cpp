@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
   std::string frame_id = "livox_frame";
   bool lidar_bag = true;
   bool imu_bag   = false;
+  bool sample_at_startup = false;
 
   livox_node.GetNode().getParam("xfer_format", xfer_format);
   livox_node.GetNode().getParam("multi_topic", multi_topic);
@@ -68,6 +69,7 @@ int main(int argc, char **argv) {
   livox_node.GetNode().getParam("frame_id", frame_id);
   livox_node.GetNode().getParam("enable_lidar_bag", lidar_bag);
   livox_node.GetNode().getParam("enable_imu_bag", imu_bag);
+  livox_node.GetNode().getParam("sample_at_startup", sample_at_startup);
 
   printf("data source:%u.\n", data_src);
 
@@ -93,7 +95,7 @@ int main(int argc, char **argv) {
     livox_node.getParam("user_config_path", user_config_path);
     DRIVER_INFO(livox_node, "Config file : %s", user_config_path.c_str());
 
-    LdsLidar *read_lidar = LdsLidar::GetInstance(publish_freq);
+    LdsLidar *read_lidar = LdsLidar::GetInstance(publish_freq, sample_at_startup);
     livox_node.lddc_ptr_->RegisterLds(static_cast<Lds *>(read_lidar));
 
     if ((read_lidar->InitLdsLidar(user_config_path))) {

@@ -37,12 +37,13 @@ namespace livox_ros {
 CacheIndex Lds::cache_index_;
 
 /* Member function --------------------------------------------------------- */
-Lds::Lds(const double publish_freq, const uint8_t data_src)
+Lds::Lds(const double publish_freq, const bool sample_at_startup, const uint8_t data_src)
     : lidar_count_(kMaxSourceLidar),
       pcd_semaphore_(0),
       imu_semaphore_(0),
       state_info_semaphore_(0),
-      publish_freq_(publish_freq),
+      sample_at_startup_(sample_at_startup),
+      publish_freq_(publish_freq),      
       data_src_(data_src),
       request_exit_(false) {
   ResetLds(data_src_);
@@ -77,6 +78,9 @@ void Lds::ResetLds(uint8_t data_src) {
 
 void Lds::RequestExit() {
   request_exit_ = true;
+  pcd_semaphore_.Signal();
+  imu_semaphore_.Signal();
+  state_info_semaphore_.Signal();
 }
 
 bool Lds::IsAllQueueEmpty() {
