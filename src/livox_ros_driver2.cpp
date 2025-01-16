@@ -45,8 +45,8 @@ void DriverNode::onInit()
     ros::console::notifyLoggerLevelsChanged();
   }
 
-  nh = getNodeHandle();
-  private_nh = getPrivateNodeHandle();
+  // ros::NodeHandle& nh = getNodeHandle();
+  ros::NodeHandle& private_nh = getPrivateNodeHandle();
 
   DRIVER_INFO(this, "Livox Ros Driver2 Version: %s", LIVOX_ROS_DRIVER2_VERSION_STRING);
 
