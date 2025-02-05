@@ -4,7 +4,7 @@
 	<!--user configure parameters for ros start-->
 	<arg name="lvx_file_path" default="livox_test.lvx"/>
 	<arg name="bd_list" default="100000000000000"/>
-	<arg name="xfer_format" default="0"/>
+	<arg name="xfer_format" default="1"/>
 	<arg name="multi_topic" default="0"/>
 	<arg name="data_src" default="0"/>
 	<arg name="publish_freq" default="10.0"/>
@@ -17,9 +17,17 @@
 	<arg name="imu_bag" default="false"/>
 	<arg name="sample_at_startup" default="false"/>
 	<arg name="config_file" default="$(find livox_ros_driver2)/config/MID360_config.json"/>
+	<arg name="enable_filter" default="true"/>
+	<arg name="box_frame" default="aristos_base_footprint"/>
+	<arg name="box_min_x" default="-1.0"/>
+	<arg name="box_min_y" default="-1.0"/>
+	<arg name="box_min_z" default="-1.0"/>
+	<arg name="box_max_x" default="1.0"/>
+	<arg name="box_max_y" default="1.0"/>
+	<arg name="box_max_z" default="1.0"/>
 	<!--user configure parameters for ros end--> 
 
-	 <!-- Nodelet manager -->
+	<!-- Nodelet manager -->
     <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" output="screen"/>
 
     <!-- New nodelet -->
@@ -38,6 +46,18 @@
 		<param name="sample_at_startup" type="bool" value="$(arg sample_at_startup)"/>
     </node>
 
+	<node pkg="nodelet" type="nodelet" name="custom_livox_filter" args="load livox_ros_driver2/CustomFilterNodelet nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="livox_lidar_publisher2/livox/lidar"/>
+		<remap from="filtered_point_cloud" to="/livox/lidar"/>
+		<param name="enable" type="bool" value="$(arg enable_filter)"/>
+		<param name="box_frame" type="string" value="$(arg box_frame)"/>
+		<param name="box_min_x" type="double" value="$(arg box_min_x)"/>
+		<param name="box_min_y" type="double" value="$(arg box_min_y)"/>
+		<param name="box_min_z" type="double" value="$(arg box_min_z)"/>
+		<param name="box_max_x" type="double" value="$(arg box_max_x)"/>
+		<param name="box_max_y" type="double" value="$(arg box_max_y)"/>
+		<param name="box_max_z" type="double" value="$(arg box_max_z)"/>
+	</node>
 
 	<group if="$(arg rviz_enable)">
 		<node name="livox_rviz" pkg="rviz" type="rviz" respawn="true"

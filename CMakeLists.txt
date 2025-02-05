@@ -37,10 +37,15 @@ if(ROS_EDITION STREQUAL "ROS1")
     std_msgs
     std_srvs
     message_generation
+    dynamic_reconfigure
     rosbag
     pcl_ros
     nodelet
     pluginlib
+  )
+
+  generate_dynamic_reconfigure_options(
+    cfg/CustomFilter.cfg
   )
 
   ## Find pcl lib
@@ -81,8 +86,8 @@ if(ROS_EDITION STREQUAL "ROS1")
   ## DEPENDS: system dependencies of this project that dependent projects also n    eed
   catkin_package(
     INCLUDE_DIRS src/include
-    LIBRARIES ${PROJECT_NAME}_nodelet
-    CATKIN_DEPENDS roscpp rospy std_msgs message_runtime nodelet pcl_ros
+    LIBRARIES ${PROJECT_NAME}_nodelet filter_nodelet custom_filter_nodelet
+    CATKIN_DEPENDS roscpp rospy std_msgs dynamic_reconfigure message_runtime nodelet pcl_ros
   )
 
   #---------------------------------------------------------------------------------------
@@ -136,7 +141,14 @@ if(ROS_EDITION STREQUAL "ROS1")
     src/call_back/lidar_common_callback.cpp
     src/call_back/livox_lidar_callback.cpp
   )
+
+  add_library(filter_nodelet
+    src/filter.cpp
+  )
   
+  add_library(custom_filter_nodelet
+    src/filter_custom.cpp
+  )
 
   #---------------------------------------------------------------------------------------
   # precompile macro and compile option
@@ -145,11 +157,20 @@ if(ROS_EDITION STREQUAL "ROS1")
     PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
   )
 
+  target_compile_options(filter_nodelet
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
+  target_compile_options(custom_filter_nodelet
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
   #---------------------------------------------------------------------------------------
   # add projects that depend on
   #---------------------------------------------------------------------------------------
   add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_generate_messages_cpp)
 
+  add_dependencies(custom_filter_nodelet ${PROJECT_NAME}_gencfg)
 
   #---------------------------------------------------------------------------------------
   # include file
@@ -163,6 +184,19 @@ if(ROS_EDITION STREQUAL "ROS1")
     src
   )
 
+  target_include_directories(filter_nodelet
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${APR_INCLUDE_DIRS}
+  )
+
+  target_include_directories(custom_filter_nodelet
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
+    ${APR_INCLUDE_DIRS}
+  )
+
   #---------------------------------------------------------------------------------------
   # link libraries
   #---------------------------------------------------------------------------------------
@@ -171,6 +205,19 @@ if(ROS_EDITION STREQUAL "ROS1")
     ${Boost_LIBRARY}
     ${catkin_LIBRARIES}
     ${PCL_LIBRARIES}
+    ${APR_LIBRARIES}
+  )
+
+  target_link_libraries(filter_nodelet
+    ${Boost_LIBRARY}
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${APR_LIBRARIES}
+  )
+
+  target_link_libraries(custom_filter_nodelet
+    ${Boost_LIBRARY}
+    ${catkin_LIBRARIES}
     ${APR_LIBRARIES}
   )
 
@@ -185,11 +232,31 @@ if(ROS_EDITION STREQUAL "ROS1")
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
+  install(TARGETS filter_nodelet
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+  install(TARGETS custom_filter_nodelet
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
   install(DIRECTORY launch_ROS1/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch_ROS1
   )
 
   install(FILES ${PROJECT_NAME}_nodelet.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+  install(FILES library_filter_nodelet.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+  install(FILES library_custom_filter_nodelet.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
 

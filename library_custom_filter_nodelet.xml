@@ -1,0 +1,5 @@
+<library path="lib/libcustom_filter_nodelet">
+  <class name="livox_ros_driver2/CustomFilterNodelet" type="livox_ros::CustomFilterNodelet" base_class_type="nodelet::Nodelet">
+    <description>Livox Filter Nodele for livox CustomMsg</description>
+  </class>
+</library>
