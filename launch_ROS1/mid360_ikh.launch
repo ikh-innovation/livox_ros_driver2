@@ -28,11 +28,15 @@
 	<!--user configure parameters for ros end--> 
 
 	<!-- Nodelet manager -->
-    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="lidar_nodelet_manager" args="manager" output="screen"/>
 
     <!-- New nodelet -->
-    <node pkg="nodelet" type="nodelet" name="livox_lidar_publisher2" args="load livox_ros_driver2/DriverNode nodelet_manager" output="screen">
-        <param name="xfer_format" value="$(arg xfer_format)"/>
+    <node pkg="nodelet" type="nodelet" name="livox_lidar_publisher2" args="load livox_ros_driver2/DriverNode lidar_nodelet_manager" output="screen">
+        <remap from="livox_lidar_publisher2/livox/enable_sampling" to="livox/enable_sampling"/>
+		<remap from="livox_lidar_publisher2/livox/lidar" to="livox/lidar"/>
+		<remap from="livox_lidar_publisher2/livox/imu" to="livox/imu"/>
+		<remap from="livox_lidar_publisher2/livox/info" to="livox/info"/>
+		<param name="xfer_format" value="$(arg xfer_format)"/>
 		<param name="multi_topic" value="$(arg multi_topic)"/>
 		<param name="data_src" value="$(arg data_src)"/>
 		<param name="publish_freq" type="double" value="$(arg publish_freq)"/>
@@ -46,9 +50,9 @@
 		<param name="sample_at_startup" type="bool" value="$(arg sample_at_startup)"/>
     </node>
 
-	<node pkg="nodelet" type="nodelet" name="custom_livox_filter" args="load livox_ros_driver2/CustomFilterNodelet nodelet_manager" output="screen">
-		<remap from="input_point_cloud" to="livox_lidar_publisher2/livox/lidar"/>
-		<remap from="filtered_point_cloud" to="/livox/lidar"/>
+	<node pkg="nodelet" type="nodelet" name="custom_livox_filter" args="load livox_ros_driver2/CustomFilterNodelet lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="livox/lidar"/>
+		<remap from="filtered_point_cloud" to="livox/lidar_filtered"/>
 		<param name="enable" type="bool" value="$(arg enable_filter)"/>
 		<param name="box_frame" type="string" value="$(arg box_frame)"/>
 		<param name="box_min_x" type="double" value="$(arg box_min_x)"/>

@@ -248,7 +248,7 @@ void Lddc::PublishPointcloud2(LidarDataQueue *queue, uint8_t index) {
       continue;
     }
 
-    PointCloud2 cloud;
+    PointCloud2Ptr cloud(new PointCloud2);
     uint64_t timestamp = 0;
     InitPointcloud2Msg(pkg, cloud, timestamp);
     PublishPointcloud2Data(index, timestamp, cloud);
@@ -264,7 +264,7 @@ void Lddc::PublishCustomPointcloud(LidarDataQueue *queue, uint8_t index) {
       continue;
     }
 
-    CustomMsg livox_msg;
+    CustomMsgPtr livox_msg(new CustomMsg);
     InitCustomMsg(livox_msg, pkg, index);
     FillPointsToCustomMsg(livox_msg, pkg);
     PublishCustomPointData(livox_msg, index);
@@ -300,59 +300,59 @@ void Lddc::PublishPclMsg(LidarDataQueue *queue, uint8_t index) {
   return;
 }
 
-void Lddc::InitPointcloud2MsgHeader(PointCloud2& cloud) {
-  cloud.header.frame_id.assign(frame_id_);
-  cloud.height = 1;
-  cloud.width = 0;
-  cloud.fields.resize(7);
-  cloud.fields[0].offset = 0;
-  cloud.fields[0].name = "x";
-  cloud.fields[0].count = 1;
-  cloud.fields[0].datatype = PointField::FLOAT32;
-  cloud.fields[1].offset = 4;
-  cloud.fields[1].name = "y";
-  cloud.fields[1].count = 1;
-  cloud.fields[1].datatype = PointField::FLOAT32;
-  cloud.fields[2].offset = 8;
-  cloud.fields[2].name = "z";
-  cloud.fields[2].count = 1;
-  cloud.fields[2].datatype = PointField::FLOAT32;
-  cloud.fields[3].offset = 12;
-  cloud.fields[3].name = "intensity";
-  cloud.fields[3].count = 1;
-  cloud.fields[3].datatype = PointField::FLOAT32;
-  cloud.fields[4].offset = 16;
-  cloud.fields[4].name = "tag";
-  cloud.fields[4].count = 1;
-  cloud.fields[4].datatype = PointField::UINT8;
-  cloud.fields[5].offset = 17;
-  cloud.fields[5].name = "line";
-  cloud.fields[5].count = 1;
-  cloud.fields[5].datatype = PointField::UINT8;
-  cloud.fields[6].offset = 18;
-  cloud.fields[6].name = "timestamp";
-  cloud.fields[6].count = 1;
-  cloud.fields[6].datatype = PointField::FLOAT64;
-  cloud.point_step = sizeof(LivoxPointXyzrtlt);
+void Lddc::InitPointcloud2MsgHeader(PointCloud2Ptr& cloud) {
+  cloud->header.frame_id.assign(frame_id_);
+  cloud->height = 1;
+  cloud->width = 0;
+  cloud->fields.resize(7);
+  cloud->fields[0].offset = 0;
+  cloud->fields[0].name = "x";
+  cloud->fields[0].count = 1;
+  cloud->fields[0].datatype = PointField::FLOAT32;
+  cloud->fields[1].offset = 4;
+  cloud->fields[1].name = "y";
+  cloud->fields[1].count = 1;
+  cloud->fields[1].datatype = PointField::FLOAT32;
+  cloud->fields[2].offset = 8;
+  cloud->fields[2].name = "z";
+  cloud->fields[2].count = 1;
+  cloud->fields[2].datatype = PointField::FLOAT32;
+  cloud->fields[3].offset = 12;
+  cloud->fields[3].name = "intensity";
+  cloud->fields[3].count = 1;
+  cloud->fields[3].datatype = PointField::FLOAT32;
+  cloud->fields[4].offset = 16;
+  cloud->fields[4].name = "tag";
+  cloud->fields[4].count = 1;
+  cloud->fields[4].datatype = PointField::UINT8;
+  cloud->fields[5].offset = 17;
+  cloud->fields[5].name = "line";
+  cloud->fields[5].count = 1;
+  cloud->fields[5].datatype = PointField::UINT8;
+  cloud->fields[6].offset = 18;
+  cloud->fields[6].name = "timestamp";
+  cloud->fields[6].count = 1;
+  cloud->fields[6].datatype = PointField::FLOAT64;
+  cloud->point_step = sizeof(LivoxPointXyzrtlt);
 }
 
-void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint64_t& timestamp) {
+void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2Ptr& cloud, uint64_t& timestamp) {
   InitPointcloud2MsgHeader(cloud);
 
-  cloud.point_step = sizeof(LivoxPointXyzrtlt);
+  cloud->point_step = sizeof(LivoxPointXyzrtlt);
 
-  cloud.width = pkg.points_num;
-  cloud.row_step = cloud.width * cloud.point_step;
+  cloud->width = pkg.points_num;
+  cloud->row_step = cloud->width * cloud->point_step;
 
-  cloud.is_bigendian = false;
-  cloud.is_dense     = true;
+  cloud->is_bigendian = false;
+  cloud->is_dense     = true;
 
   if (!pkg.points.empty()) {
     timestamp = pkg.base_time;
   }
 
   #ifdef BUILDING_ROS1
-      cloud.header.stamp = ros::Time( timestamp / 1000000000.0);
+      cloud->header.stamp = ros::Time( timestamp / 1000000000.0);
   #elif defined BUILDING_ROS2
       cloud.header.stamp = rclcpp::Time(timestamp);
   #endif
@@ -369,11 +369,11 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint
     point.timestamp = static_cast<double>(pkg.points[i].offset_time);
     points.push_back(std::move(point));
   }
-  cloud.data.resize(pkg.points_num * sizeof(LivoxPointXyzrtlt));
-  memcpy(cloud.data.data(), points.data(), pkg.points_num * sizeof(LivoxPointXyzrtlt));
+  cloud->data.resize(pkg.points_num * sizeof(LivoxPointXyzrtlt));
+  memcpy(cloud->data.data(), points.data(), pkg.points_num * sizeof(LivoxPointXyzrtlt));
 }
 
-void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp, const PointCloud2& cloud) {
+void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp, const PointCloud2Ptr& cloud) {
 #ifdef BUILDING_ROS1
   PublisherPtr publisher_ptr = Lddc::GetCurrentPublisher(index);
 #elif defined BUILDING_ROS2
@@ -392,12 +392,12 @@ void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp,
   }
 }
 
-void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t index) {
-  livox_msg.header.frame_id.assign(frame_id_);
+void Lddc::InitCustomMsg(CustomMsgPtr& livox_msg, const StoragePacket& pkg, uint8_t index) {
+  livox_msg->header.frame_id.assign(frame_id_);
 
 #ifdef BUILDING_ROS1
   static uint32_t msg_seq = 0;
-  livox_msg.header.seq = msg_seq;
+  livox_msg->header.seq = msg_seq;
   ++msg_seq;
 #endif
 
@@ -405,24 +405,24 @@ void Lddc::InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t
   if (!pkg.points.empty()) {
     timestamp = pkg.base_time;
   }
-  livox_msg.timebase = timestamp;
+  livox_msg->timebase = timestamp;
 
 #ifdef BUILDING_ROS1
-  livox_msg.header.stamp = ros::Time(timestamp / 1000000000.0);
+  livox_msg->header.stamp = ros::Time(timestamp / 1000000000.0);
 #elif defined BUILDING_ROS2
   livox_msg.header.stamp = rclcpp::Time(timestamp);
 #endif
 
-  livox_msg.point_num = pkg.points_num;
+  livox_msg->point_num = pkg.points_num;
   if (lds_->lidars_[index].lidar_type == kLivoxLidarType) {
-    livox_msg.lidar_id = lds_->lidars_[index].handle;
+    livox_msg->lidar_id = lds_->lidars_[index].handle;
   } else {
     printf("Init custom msg lidar id failed, the index:%u.\n", index);
-    livox_msg.lidar_id = 0;
+    livox_msg->lidar_id = 0;
   }
 }
 
-void Lddc::FillPointsToCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg) {
+void Lddc::FillPointsToCustomMsg(CustomMsgPtr& livox_msg, const StoragePacket& pkg) {
   uint32_t points_num = pkg.points_num;
   const std::vector<PointXyzlt>& points = pkg.points;
   for (uint32_t i = 0; i < points_num; ++i) {
@@ -435,11 +435,11 @@ void Lddc::FillPointsToCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg)
     point.line = points[i].line;
     point.offset_time = static_cast<uint32_t>(points[i].offset_time - pkg.base_time);
 
-    livox_msg.points.push_back(std::move(point));
+    livox_msg->points.push_back(std::move(point));
   }
 }
 
-void Lddc::PublishCustomPointData(const CustomMsg& livox_msg, const uint8_t index) {
+void Lddc::PublishCustomPointData(const CustomMsgPtr& livox_msg, const uint8_t index) {
 #ifdef BUILDING_ROS1
   PublisherPtr publisher_ptr = Lddc::GetCurrentPublisher(index);
 #elif defined BUILDING_ROS2
@@ -451,7 +451,7 @@ void Lddc::PublishCustomPointData(const CustomMsg& livox_msg, const uint8_t inde
   } else {
 #ifdef BUILDING_ROS1
     if (bag_ && enable_lidar_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(livox_msg.timebase / 1000000000.0), livox_msg);
+      bag_->write(publisher_ptr->getTopic(), ros::Time(livox_msg->timebase / 1000000000.0), livox_msg);
     }
 #endif
   }

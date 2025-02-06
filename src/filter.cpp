@@ -42,7 +42,7 @@ namespace livox_ros
         void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
         {
             // Transform point cloud to box frame
-            sensor_msgs::PointCloud2 output{*cloud_msg};
+            sensor_msgs::PointCloud2Ptr output{new sensor_msgs::PointCloud2(*cloud_msg)};
             if (cloud_msg->header.frame_id != box_frame_)
             {
                 while (!tf_ready_)
@@ -62,7 +62,7 @@ namespace livox_ros
 
 
             pcl::PCLPointCloud2::Ptr output_cloud(new pcl::PCLPointCloud2);
-            pcl_conversions::toPCL(output, *output_cloud);            
+            pcl_conversions::toPCL(*output, *output_cloud);            
 
             pcl::CropBox<pcl::PCLPointCloud2> box_filter;
             box_filter.setMin(Eigen::Vector4f(box_min_x_, box_min_y_, box_min_z_, 1.0));
@@ -71,9 +71,7 @@ namespace livox_ros
             box_filter.setNegative(true);
             box_filter.filter(*output_cloud);
 
-            pcl_conversions::moveFromPCL(*output_cloud, output);
-            // output.header = cloud_msg->header;
-            // output.header.frame_id = box_frame_;
+            pcl_conversions::moveFromPCL(*output_cloud, *output);
             pub_.publish(output);
         }
         

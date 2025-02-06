@@ -54,7 +54,7 @@ namespace livox_ros
 
         void pointCloudCallback(const livox_ros_driver2::CustomMsgConstPtr &cloud_msg)
         {
-            livox_ros_driver2::CustomMsg output{*cloud_msg};
+            livox_ros_driver2::CustomMsgPtr output{new livox_ros_driver2::CustomMsg(*cloud_msg)};
             boost::recursive_mutex::scoped_lock lock(mutex_);
             if (enable_)
             {
@@ -84,7 +84,7 @@ namespace livox_ros
                 }            
                 
                 // Transform and filter points
-                auto it = std::remove_if(output.points.begin(), output.points.end(), [&](livox_ros_driver2::CustomPoint &p) {
+                auto it = std::remove_if(output->points.begin(), output->points.end(), [&](livox_ros_driver2::CustomPoint &p) {
                     Eigen::Vector3f point = box_to_lidar_tf_ * Eigen::Vector3f(p.x, p.y, p.z);
                     if (point.x() < box_min_x_ || point.y() < box_min_y_ || point.z() < box_min_z_ || point.x() > box_max_x_ || point.y() > box_max_y_ || point.z() > box_max_z_)
                     {
@@ -100,9 +100,9 @@ namespace livox_ros
                         return true;
                     }
                 });
-                output.points.erase(it, output.points.end());
-                output.header.frame_id = box_frame_;
-                output.point_num = output.points.size();
+                output->points.erase(it, output->points.end());
+                output->header.frame_id = box_frame_;
+                output->point_num = output->points.size();
             }
             pub_.publish(output);
         }
