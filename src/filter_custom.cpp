@@ -40,7 +40,8 @@ namespace livox_ros
         void configCallback(livox_ros_driver2::CustomFilterConfig &config, uint32_t level)
         {
             boost::recursive_mutex::scoped_lock lock(mutex_);
-            enable_ = config.enable;
+            enable_box_ = config.enable_box_filtering;
+            enable_tag_ = config.enable_tag_filtering;
             box_min_x_ = config.box_min_x;
             box_min_y_ = config.box_min_y;
             box_min_z_ = config.box_min_z;
@@ -50,15 +51,24 @@ namespace livox_ros
             if (config.box_frame != box_frame_)
                 tf_ready_ = false;
             box_frame_ = config.box_frame;
+            other_high_ = config.other_high;
+            other_moderate_ = config.other_moderate;
+            other_low_ = config.other_low;
+            atm_high_ = config.atm_high;
+            atm_moderate_ = config.atm_moderate;
+            atm_low_ = config.atm_low;
+            drag_high_ = config.drag_high;
+            drag_moderate_ = config.drag_moderate;
+            drag_low_ = config.drag_low;
         }
 
         void pointCloudCallback(const livox_ros_driver2::CustomMsgConstPtr &cloud_msg)
         {
             livox_ros_driver2::CustomMsgPtr output{new livox_ros_driver2::CustomMsg(*cloud_msg)};
             boost::recursive_mutex::scoped_lock lock(mutex_);
-            if (enable_)
+            if (enable_box_ || enable_tag_)
             {
-                if (!tf_ready_)
+                if (enable_box_ && !tf_ready_)
                 {
                     try
                     {
@@ -85,31 +95,45 @@ namespace livox_ros
                 
                 // Transform and filter points
                 auto it = std::remove_if(output->points.begin(), output->points.end(), [&](livox_ros_driver2::CustomPoint &p) {
-                    Eigen::Vector3f point = box_to_lidar_tf_ * Eigen::Vector3f(p.x, p.y, p.z);
-                    if (point.x() < box_min_x_ || point.y() < box_min_y_ || point.z() < box_min_z_ || point.x() > box_max_x_ || point.y() > box_max_y_ || point.z() > box_max_z_)
+                    if (enable_box_)
                     {
-                        // If outside the cropbox, update the point
-                        p.x = point.x();
-                        p.y = point.y();
-                        p.z = point.z();
-                        return false;
-                    }
-                    else
-                    {
+                        Eigen::Vector3f point = box_to_lidar_tf_ * Eigen::Vector3f(p.x, p.y, p.z);
                         // If inside the cropbox, remove the point
-                        return true;
+                        if (point.x() >= box_min_x_ && point.y() >= box_min_y_ && point.z() >= box_min_z_ && 
+                            point.x() <= box_max_x_ && point.y() <= box_max_y_ && point.z() <= box_max_z_)
+                        {
+                            return true;
+                        }
                     }
+
+                    if (enable_tag_)
+                    {
+                        uint8_t drag_tag = p.tag & 0x03;
+                        uint8_t atm_tag = (p.tag >> 2) & 0x03;
+                        uint8_t other_tag = (p.tag >> 4) & 0x03;
+                        if (((other_tag == 0 && !other_high_) || (other_tag == 1 && !other_moderate_) || (other_tag == 2 && !other_low_)) ||
+                            ((atm_tag == 0 && !atm_high_) || (atm_tag == 1 && !atm_moderate_) || (atm_tag == 2 && !atm_low_)) ||
+                            ((drag_tag == 0 && !drag_high_) || (drag_tag == 1 && !drag_moderate_) || (drag_tag == 2 && !drag_low_)))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                    
                 });
                 output->points.erase(it, output->points.end());
-                output->header.frame_id = box_frame_;
                 output->point_num = output->points.size();
             }
             pub_.publish(output);
         }
 
         boost::recursive_mutex mutex_;
-        bool enable_{true};
         bool tf_ready_{false};
+        bool enable_box_{true}, enable_tag_{true};        
+        bool atm_high_{true}, atm_moderate_{true}, atm_low_{true};
+        bool drag_high_{true}, drag_moderate_{true}, drag_low_{true};
+        bool other_high_{true}, other_moderate_{true}, other_low_{true};        
         ros::Publisher pub_;
         ros::Subscriber sub_;      
         std::string box_frame_;

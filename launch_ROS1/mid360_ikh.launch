@@ -17,7 +17,8 @@
 	<arg name="imu_bag" default="false"/>
 	<arg name="sample_at_startup" default="false"/>
 	<arg name="config_file" default="$(find livox_ros_driver2)/config/MID360_config.json"/>
-	<arg name="enable_filter" default="true"/>
+	<arg name="enable_box_filtering" default="true"/>
+	<arg name="enable_tag_filtering" default="true"/>
 	<arg name="box_frame" default="aristos_base_footprint"/>
 	<arg name="box_min_x" default="-1.0"/>
 	<arg name="box_min_y" default="-1.0"/>
@@ -25,6 +26,16 @@
 	<arg name="box_max_x" default="1.0"/>
 	<arg name="box_max_y" default="1.0"/>
 	<arg name="box_max_z" default="1.0"/>
+	<arg name="other_high" default="true"/>
+	<arg name="other_moderate" default="true"/>
+	<arg name="other_low" default="true"/>
+	<arg name="atm_high" default="true"/>
+	<arg name="atm_moderate" default="true"/>
+	<arg name="atm_low" default="true"/>
+	<arg name="drag_high" default="true"/>
+	<arg name="drag_moderate" default="true"/>
+	<arg name="drag_low" default="true"/>
+	
 	<!--user configure parameters for ros end--> 
 
 	<!-- Nodelet manager -->
@@ -53,7 +64,8 @@
 	<node pkg="nodelet" type="nodelet" name="custom_livox_filter" args="load livox_ros_driver2/CustomFilterNodelet lidar_nodelet_manager" output="screen">
 		<remap from="input_point_cloud" to="livox/lidar"/>
 		<remap from="filtered_point_cloud" to="livox/lidar_filtered"/>
-		<param name="enable" type="bool" value="$(arg enable_filter)"/>
+		<param name="enable_box_filtering" type="bool" value="$(arg enable_box_filtering)"/>
+		<param name="enable_tag_filtering" type="bool" value="$(arg enable_tag_filtering)"/>
 		<param name="box_frame" type="string" value="$(arg box_frame)"/>
 		<param name="box_min_x" type="double" value="$(arg box_min_x)"/>
 		<param name="box_min_y" type="double" value="$(arg box_min_y)"/>
@@ -61,6 +73,15 @@
 		<param name="box_max_x" type="double" value="$(arg box_max_x)"/>
 		<param name="box_max_y" type="double" value="$(arg box_max_y)"/>
 		<param name="box_max_z" type="double" value="$(arg box_max_z)"/>
+		<param name="other_high" type="bool" value="$(arg other_high)"/>
+		<param name="other_moderate" type="bool" value="$(arg other_moderate)"/>
+		<param name="other_low" type="bool" value="$(arg other_low)"/>
+		<param name="atm_high" type="bool" value="$(arg atm_high)"/>
+		<param name="atm_moderate" type="bool" value="$(arg atm_moderate)"/>
+		<param name="atm_low" type="bool" value="$(arg atm_low)"/>
+		<param name="drag_high" type="bool" value="$(arg drag_high)"/>
+		<param name="drag_moderate" type="bool" value="$(arg drag_moderate)"/>
+		<param name="drag_low" type="bool" value="$(arg drag_low)"/>
 	</node>
 
 	<group if="$(arg rviz_enable)">
