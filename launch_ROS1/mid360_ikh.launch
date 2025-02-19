@@ -29,12 +29,19 @@
 	<arg name="other_high" default="true"/>
 	<arg name="other_moderate" default="true"/>
 	<arg name="other_low" default="true"/>
+	<arg name="other_rsrv" default="true"/>
 	<arg name="atm_high" default="true"/>
 	<arg name="atm_moderate" default="true"/>
 	<arg name="atm_low" default="true"/>
+	<arg name="atm_rsrv" default="true"/>
 	<arg name="drag_high" default="true"/>
 	<arg name="drag_moderate" default="true"/>
 	<arg name="drag_low" default="true"/>
+	<arg name="drag_rsrv" default="true"/>
+	<arg name="rsrv_zero" default="true"/>
+	<arg name="rsrv_one" default="true"/>
+	<arg name="rsrv_two" default="true"/>
+	<arg name="rsrv_three" default="true"/>
 	
 	<!--user configure parameters for ros end--> 
 
@@ -76,12 +83,19 @@
 		<param name="other_high" type="bool" value="$(arg other_high)"/>
 		<param name="other_moderate" type="bool" value="$(arg other_moderate)"/>
 		<param name="other_low" type="bool" value="$(arg other_low)"/>
+		<param name="other_rsrv" type="bool" value="$(arg other_rsrv)"/>
 		<param name="atm_high" type="bool" value="$(arg atm_high)"/>
 		<param name="atm_moderate" type="bool" value="$(arg atm_moderate)"/>
 		<param name="atm_low" type="bool" value="$(arg atm_low)"/>
+		<param name="atm_rsrv" type="bool" value="$(arg atm_rsrv)"/>
 		<param name="drag_high" type="bool" value="$(arg drag_high)"/>
 		<param name="drag_moderate" type="bool" value="$(arg drag_moderate)"/>
 		<param name="drag_low" type="bool" value="$(arg drag_low)"/>
+		<param name="drag_rsrv" type="bool" value="$(arg drag_rsrv)"/>
+		<param name="rsrv_zero" type="bool" value="$(arg rsrv_zero)"/>
+		<param name="rsrv_one" type="bool" value="$(arg rsrv_one)"/>
+		<param name="rsrv_two" type="bool" value="$(arg rsrv_two)"/>
+		<param name="rsrv_three" type="bool" value="$(arg rsrv_three)"/>
 	</node>
 
 	<group if="$(arg rviz_enable)">
