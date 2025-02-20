@@ -352,7 +352,7 @@ void Lddc::InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2Ptr& cloud, u
   }
 
   #ifdef BUILDING_ROS1
-      cloud->header.stamp = ros::Time( timestamp / 1000000000.0);
+      cloud->header.stamp = ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000));
   #elif defined BUILDING_ROS2
       cloud.header.stamp = rclcpp::Time(timestamp);
   #endif
@@ -386,7 +386,7 @@ void Lddc::PublishPointcloud2Data(const uint8_t index, const uint64_t timestamp,
   } else {
 #ifdef BUILDING_ROS1
     if (bag_ && enable_lidar_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(timestamp / 1000000000.0), cloud);
+      bag_->write(publisher_ptr->getTopic(), ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000)), cloud);
     }
 #endif
   }
@@ -408,7 +408,7 @@ void Lddc::InitCustomMsg(CustomMsgPtr& livox_msg, const StoragePacket& pkg, uint
   livox_msg->timebase = timestamp;
 
 #ifdef BUILDING_ROS1
-  livox_msg->header.stamp = ros::Time(timestamp / 1000000000.0);
+  livox_msg->header.stamp = ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000));
 #elif defined BUILDING_ROS2
   livox_msg.header.stamp = rclcpp::Time(timestamp);
 #endif
@@ -451,7 +451,7 @@ void Lddc::PublishCustomPointData(const CustomMsgPtr& livox_msg, const uint8_t i
   } else {
 #ifdef BUILDING_ROS1
     if (bag_ && enable_lidar_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(livox_msg->timebase / 1000000000.0), livox_msg);
+      bag_->write(publisher_ptr->getTopic(), ros::Time((int32_t)(livox_msg->timebase / 1000000000), (int32_t)(livox_msg->timebase % 1000000000)), livox_msg);
     }
 #endif
   }
@@ -507,7 +507,7 @@ void Lddc::PublishPclData(const uint8_t index, const uint64_t timestamp, const P
     publisher_ptr->publish(cloud);
   } else {
     if (bag_ && enable_lidar_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(timestamp / 1000000000.0), cloud);
+      bag_->write(publisher_ptr->getTopic(), ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000)), cloud);
     }
   }
 #elif defined BUILDING_ROS2
@@ -523,7 +523,7 @@ void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timest
 
   timestamp = imu_data.time_stamp;
 #ifdef BUILDING_ROS1
-  imu_msg.header.stamp = ros::Time(timestamp / 1000000000.0);  // to ros time stamp
+  imu_msg.header.stamp = ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000));  // to ros time stamp
 #elif defined BUILDING_ROS2
   imu_msg.header.stamp = rclcpp::Time(timestamp);  // to ros time stamp
 #endif
@@ -558,7 +558,7 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
   } else {
 #ifdef BUILDING_ROS1
     if (bag_ && enable_imu_bag_) {
-      bag_->write(publisher_ptr->getTopic(), ros::Time(timestamp / 1000000000.0), imu_msg);
+      bag_->write(publisher_ptr->getTopic(), ros::Time((int32_t)(timestamp / 1000000000), (int32_t)(timestamp % 1000000000)), imu_msg);
     }
 #endif
   }
