@@ -150,6 +150,14 @@ if(ROS_EDITION STREQUAL "ROS1")
     src/filter_custom.cpp
   )
 
+  add_library(livox_to_pointcloud2
+    src/livox_to_pointcloud2.cpp
+  )
+
+  add_library(pointcloud2_to_livox
+    src/pointcloud2_to_livox.cpp
+  )
+
   #---------------------------------------------------------------------------------------
   # precompile macro and compile option
   #---------------------------------------------------------------------------------------
@@ -165,12 +173,24 @@ if(ROS_EDITION STREQUAL "ROS1")
     PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
   )
 
+  target_compile_options(livox_to_pointcloud2
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
+  target_compile_options(pointcloud2_to_livox
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
   #---------------------------------------------------------------------------------------
   # add projects that depend on
   #---------------------------------------------------------------------------------------
   add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_generate_messages_cpp)
 
   add_dependencies(custom_filter_nodelet ${PROJECT_NAME}_gencfg)
+
+  add_dependencies(livox_to_pointcloud2 ${PROJECT_NAME}_gencfg)
+
+  add_dependencies(pointcloud2_to_livox ${PROJECT_NAME}_gencfg)
 
   #---------------------------------------------------------------------------------------
   # include file
@@ -197,6 +217,18 @@ if(ROS_EDITION STREQUAL "ROS1")
     ${APR_INCLUDE_DIRS}
   )
 
+  target_include_directories(livox_to_pointcloud2
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
+    ${APR_INCLUDE_DIRS}
+  )
+
+  target_include_directories(pointcloud2_to_livox
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
+    ${APR_INCLUDE_DIRS}
+  )
+
   #---------------------------------------------------------------------------------------
   # link libraries
   #---------------------------------------------------------------------------------------
@@ -216,6 +248,18 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   target_link_libraries(custom_filter_nodelet
+    ${Boost_LIBRARY}
+    ${catkin_LIBRARIES}
+    ${APR_LIBRARIES}
+  )
+
+  target_link_libraries(livox_to_pointcloud2
+    ${Boost_LIBRARY}
+    ${catkin_LIBRARIES}
+    ${APR_LIBRARIES}
+  )
+
+  target_link_libraries(pointcloud2_to_livox
     ${Boost_LIBRARY}
     ${catkin_LIBRARIES}
     ${APR_LIBRARIES}
@@ -257,6 +301,14 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   install(FILES library_custom_filter_nodelet.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+  install(FILES library_livox_to_pointcloud2.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+  install(FILES library_pointcloud2_to_livox.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
 

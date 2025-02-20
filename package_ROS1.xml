@@ -86,5 +86,7 @@
     <nodelet plugin="${prefix}/livox_ros_driver2_nodelet.xml" />
     <nodelet plugin="${prefix}/library_filter_nodelet.xml" />
     <nodelet plugin="${prefix}/library_custom_filter_nodelet.xml" />
+    <nodelet plugin="${prefix}/library_livox_to_pointcloud2.xml" />
+    <nodelet plugin="${prefix}/library_pointcloud2_to_livox.xml" />
   </export>
 </package>

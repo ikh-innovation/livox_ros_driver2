@@ -1,0 +1,5 @@
+<library path="lib/libpointcloud2_to_livox">
+  <class name="livox_ros_driver2/PCL2LivoxNodelet" type="livox_ros::PCL2LivoxNodelet" base_class_type="nodelet::Nodelet">
+    <description>sensor_msgs PointCloud2 to livox CustomMsg</description>
+  </class>
+</library>
