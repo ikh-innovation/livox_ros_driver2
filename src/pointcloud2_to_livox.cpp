@@ -45,8 +45,7 @@ namespace livox_ros
                 output->points[i].reflectivity = static_cast<uint8_t>(*reinterpret_cast<const float*>(point_ptr + fields[3].offset));
                 output->points[i].tag = *reinterpret_cast<const uint8_t*>(point_ptr + fields[4].offset);
                 output->points[i].line = *reinterpret_cast<const uint8_t*>(point_ptr + fields[5].offset);
-                // substract the timebase to get the offset time
-                output->points[i].offset_time = static_cast<uint32_t>(*reinterpret_cast<const double*>(point_ptr + fields[6].offset) - output->timebase);
+                output->points[i].offset_time = *reinterpret_cast<const uint32_t*>(point_ptr + fields[6].offset);
             }
 
             pub_.publish(output);

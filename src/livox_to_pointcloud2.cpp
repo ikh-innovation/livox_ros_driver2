@@ -31,9 +31,9 @@ namespace livox_ros
             add_field("intensity", points_msg_->fields.back().offset + sizeof(float), sensor_msgs::PointField::FLOAT32);            
             add_field("tag", points_msg_->fields.back().offset + sizeof(float), sensor_msgs::PointField::UINT8);
             add_field("line", points_msg_->fields.back().offset + sizeof(std::uint8_t), sensor_msgs::PointField::UINT8);
-            add_field("timestamp", points_msg_->fields.back().offset + sizeof(std::uint8_t), sensor_msgs::PointField::FLOAT64);
+            add_field("timestamp", points_msg_->fields.back().offset + sizeof(std::uint8_t), sensor_msgs::PointField::UINT32);
             points_msg_->is_bigendian = false;
-            points_msg_->point_step = sizeof(float) * 4 + sizeof(uint8_t) * 2 + sizeof(double);
+            points_msg_->point_step = sizeof(float) * 4 + sizeof(uint8_t) * 2 + sizeof(uint32_t);
             points_msg_->is_dense = true;
 
             // Subscribe to input point cloud
@@ -61,7 +61,7 @@ namespace livox_ros
                 *reinterpret_cast<float*>(ptr + points_msg_->fields[3].offset) = livox_msg->points[i].reflectivity;
                 *reinterpret_cast<std::uint8_t*>(ptr + points_msg_->fields[4].offset) = livox_msg->points[i].tag;
                 *reinterpret_cast<std::uint8_t*>(ptr + points_msg_->fields[5].offset) = livox_msg->points[i].line;
-                *reinterpret_cast<double*>(ptr + points_msg_->fields[6].offset) = livox_msg->timebase + livox_msg->points[i].offset_time;                
+                *reinterpret_cast<uint32_t*>(ptr + points_msg_->fields[6].offset) = livox_msg->points[i].offset_time;
 
                 ptr += points_msg_->point_step;
             }
