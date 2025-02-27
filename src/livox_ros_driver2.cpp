@@ -37,18 +37,18 @@
 using namespace livox_ros;
 
 #ifdef BUILDING_ROS1
-int main(int argc, char **argv) {
+
+void DriverNode::onInit()
+{
   /** Ros related */
   if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug)) {
     ros::console::notifyLoggerLevelsChanged();
   }
 
-  ros::init(argc, argv, "livox_lidar_publisher");
+  // ros::NodeHandle& nh = getNodeHandle();
+  ros::NodeHandle& private_nh = getPrivateNodeHandle();
 
-  // ros::NodeHandle livox_node;
-  livox_ros::DriverNode livox_node;
-
-  DRIVER_INFO(livox_node, "Livox Ros Driver2 Version: %s", LIVOX_ROS_DRIVER2_VERSION_STRING);
+  DRIVER_INFO(this, "Livox Ros Driver2 Version: %s", LIVOX_ROS_DRIVER2_VERSION_STRING);
 
   /** Init default system parameter */
   int xfer_format = kPointCloud2Msg;
@@ -61,15 +61,15 @@ int main(int argc, char **argv) {
   bool imu_bag   = false;
   bool sample_at_startup = false;
 
-  livox_node.GetNode().getParam("xfer_format", xfer_format);
-  livox_node.GetNode().getParam("multi_topic", multi_topic);
-  livox_node.GetNode().getParam("data_src", data_src);
-  livox_node.GetNode().getParam("publish_freq", publish_freq);
-  livox_node.GetNode().getParam("output_data_type", output_type);
-  livox_node.GetNode().getParam("frame_id", frame_id);
-  livox_node.GetNode().getParam("enable_lidar_bag", lidar_bag);
-  livox_node.GetNode().getParam("enable_imu_bag", imu_bag);
-  livox_node.GetNode().getParam("sample_at_startup", sample_at_startup);
+  private_nh.getParam("xfer_format", xfer_format);
+  private_nh.getParam("multi_topic", multi_topic);
+  private_nh.getParam("data_src", data_src);
+  private_nh.getParam("publish_freq", publish_freq);
+  private_nh.getParam("output_data_type", output_type);
+  private_nh.getParam("frame_id", frame_id);
+  private_nh.getParam("enable_lidar_bag", lidar_bag);
+  private_nh.getParam("enable_imu_bag", imu_bag);
+  private_nh.getParam("sample_at_startup", sample_at_startup);
 
   printf("data source:%u.\n", data_src);
 
@@ -81,43 +81,39 @@ int main(int argc, char **argv) {
     publish_freq = publish_freq;
   }
 
-  livox_node.future_ = livox_node.exit_signal_.get_future();
+  future_ = exit_signal_.get_future();
 
   /** Lidar data distribute control and lidar data source set */
-  livox_node.lddc_ptr_ = std::make_unique<Lddc>(xfer_format, multi_topic, data_src, output_type,
-                        publish_freq, frame_id, lidar_bag, imu_bag);
-  livox_node.lddc_ptr_->SetRosNode(&livox_node);
+  lddc_ptr_ = std::make_unique<Lddc>(xfer_format, multi_topic, data_src, output_type, publish_freq, frame_id, lidar_bag, imu_bag);
+  lddc_ptr_->SetRosNode(this);
 
   if (data_src == kSourceRawLidar) {
-    DRIVER_INFO(livox_node, "Data Source is raw lidar.");
+    DRIVER_INFO(this, "Data Source is raw lidar.");
 
     std::string user_config_path;
-    livox_node.getParam("user_config_path", user_config_path);
-    DRIVER_INFO(livox_node, "Config file : %s", user_config_path.c_str());
+    private_nh.getParam("user_config_path", user_config_path);
+    DRIVER_INFO(this, "Config file : %s", user_config_path.c_str());
 
     LdsLidar *read_lidar = LdsLidar::GetInstance(publish_freq, sample_at_startup);
-    livox_node.lddc_ptr_->RegisterLds(static_cast<Lds *>(read_lidar));
+    lddc_ptr_->RegisterLds(static_cast<Lds *>(read_lidar));
 
     if ((read_lidar->InitLdsLidar(user_config_path))) {
-      DRIVER_INFO(livox_node, "Init lds lidar successfully!");
+      DRIVER_INFO(this, "Init lds lidar successfully!");
     } else {
-      DRIVER_ERROR(livox_node, "Init lds lidar failed!");
+      DRIVER_ERROR(this, "Init lds lidar failed!");
     }
   } else {
-    DRIVER_ERROR(livox_node, "Invalid data src (%d), please check the launch file", data_src);
+    DRIVER_ERROR(this, "Invalid data src (%d), please check the launch file", data_src);
   }
 
-  livox_node.pointclouddata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::PointCloudDataPollThread, &livox_node);
-  livox_node.imudata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::ImuDataPollThread, &livox_node);
-  livox_node.stateinfo_poll_thread_ = std::make_shared<std::thread>(&DriverNode::StateInfoPollThread, &livox_node);
+  pointclouddata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::PointCloudDataPollThread, this);
+  imudata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::ImuDataPollThread, this);
+  stateinfo_poll_thread_ = std::make_shared<std::thread>(&DriverNode::StateInfoPollThread, this);
 
-  livox_node.sampling_service_ = livox_node.GetNode().advertiseService("livox/enable_sampling", &DriverNode::SetSamplingCallback, &livox_node);
+  sampling_service_ = private_nh.advertiseService("livox/enable_sampling", &DriverNode::SetSamplingCallback, this);
 
-  ros::spin();
-	ros::waitForShutdown();
-
-  return 0;
 }
+PLUGINLIB_EXPORT_CLASS(livox_ros::DriverNode,nodelet::Nodelet)
 
 #elif defined BUILDING_ROS2
 namespace livox_ros

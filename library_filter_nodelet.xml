@@ -1,0 +1,5 @@
+<library path="lib/libfilter_nodelet">
+  <class name="livox_ros_driver2/FilterNodelet" type="livox_ros::FilterNodelet" base_class_type="nodelet::Nodelet">
+    <description>Livox Filter Nodele for sensor_msgs Pointcloud2</description>
+  </class>
+</library>

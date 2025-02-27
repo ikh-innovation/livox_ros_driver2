@@ -31,6 +31,8 @@
 #include <future>
 
 #include <ros/ros.h>
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
 #include <rosbag/bag.h>
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/Imu.h>

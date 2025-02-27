@@ -34,20 +34,22 @@ namespace livox_ros {
 class Lddc;
 
 #ifdef BUILDING_ROS1
-class DriverNode final : public ros::NodeHandle {
+class DriverNode final : public nodelet::Nodelet {
  public:
   DriverNode() = default;
-  DriverNode(const DriverNode &) = delete;
+  // DriverNode(const DriverNode &) = delete;
   ~DriverNode();
-  DriverNode &operator=(const DriverNode &) = delete;
+  // DriverNode &operator=(const DriverNode &) = delete;
 
-  DriverNode& GetNode() noexcept;
+  // DriverNode& GetNode() noexcept;
 
   void PointCloudDataPollThread();
   void ImuDataPollThread();
   void StateInfoPollThread();
   bool SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs::SetBool::Response &res);
   static void WorkModeChangeOnceCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse *response, void *client_data);
+  ros::NodeHandle& getMyNodeHandle(){return getNodeHandle();}
+  ros::NodeHandle& getMyPrivateNodeHandle(){return getPrivateNodeHandle();}
 
   std::unique_ptr<Lddc> lddc_ptr_;
   std::shared_ptr<std::thread> pointclouddata_poll_thread_;
@@ -60,6 +62,8 @@ class DriverNode final : public ros::NodeHandle {
   std::mutex mtx_;
   uint callbacks_done_;
   bool callbacks_status_;
+ private:
+  void onInit() override;
 };
 
 #elif defined BUILDING_ROS2

@@ -51,8 +51,10 @@ typedef enum {
 using Publisher = ros::Publisher;
 using PublisherPtr = ros::Publisher*;
 using PointCloud2 = sensor_msgs::PointCloud2;
+using PointCloud2Ptr = sensor_msgs::PointCloud2Ptr;
 using PointField = sensor_msgs::PointField;
 using CustomMsg = livox_ros_driver2::CustomMsg;
+using CustomMsgPtr = livox_ros_driver2::CustomMsgPtr;
 using CustomPoint = livox_ros_driver2::CustomPoint;
 using ImuMsg = sensor_msgs::Imu;
 using StateInfoMsg = livox_ros_driver2::StateInfoMsg;
@@ -111,13 +113,13 @@ class Lddc final {
 
   void PublishStateInfo(LidarStateInfoQueue& state_info_queue, const uint8_t index);
 
-  void InitPointcloud2MsgHeader(PointCloud2& cloud);
-  void InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2& cloud, uint64_t& timestamp);
-  void PublishPointcloud2Data(const uint8_t index, uint64_t timestamp, const PointCloud2& cloud);
+  void InitPointcloud2MsgHeader(PointCloud2Ptr& cloud);
+  void InitPointcloud2Msg(const StoragePacket& pkg, PointCloud2Ptr& cloud, uint64_t& timestamp);
+  void PublishPointcloud2Data(const uint8_t index, uint64_t timestamp, const PointCloud2Ptr& cloud);
 
-  void InitCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg, uint8_t index);
-  void FillPointsToCustomMsg(CustomMsg& livox_msg, const StoragePacket& pkg);
-  void PublishCustomPointData(const CustomMsg& livox_msg, const uint8_t index);
+  void InitCustomMsg(CustomMsgPtr& livox_msg, const StoragePacket& pkg, uint8_t index);
+  void FillPointsToCustomMsg(CustomMsgPtr& livox_msg, const StoragePacket& pkg);
+  void PublishCustomPointData(const CustomMsgPtr& livox_msg, const uint8_t index);
 
   void InitPclMsg(const StoragePacket& pkg, PointCloud& cloud, uint64_t& timestamp);
   void FillPointsToPclMsg(const StoragePacket& pkg, PointCloud& pcl_msg);
@@ -126,7 +128,7 @@ class Lddc final {
   void InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timestamp);
 
   void FillPointsToPclMsg(PointCloud& pcl_msg, LivoxPointXyzrtlt* src_point, uint32_t num);
-  void FillPointsToCustomMsg(CustomMsg& livox_msg, LivoxPointXyzrtlt* src_point, uint32_t num,
+  void FillPointsToCustomMsg(CustomMsgPtr& livox_msg, LivoxPointXyzrtlt* src_point, uint32_t num,
       uint32_t offset_time, uint32_t point_interval, uint32_t echo_num);
 
 #ifdef BUILDING_ROS2
