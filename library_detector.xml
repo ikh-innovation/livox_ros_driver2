@@ -1,0 +1,5 @@
+<library path="lib/libdetector">
+  <class name="livox_ros_driver2/Detector" type="obstacle_detection::Detector" base_class_type="nodelet::Nodelet">
+    <description>Obstacle detection nodelet</description>
+  </class>
+</library>

@@ -158,6 +158,10 @@ if(ROS_EDITION STREQUAL "ROS1")
     src/pointcloud2_to_livox.cpp
   )
 
+  add_library(detector
+    src/obstacle_detection.cpp
+  )
+
   #---------------------------------------------------------------------------------------
   # precompile macro and compile option
   #---------------------------------------------------------------------------------------
@@ -181,6 +185,10 @@ if(ROS_EDITION STREQUAL "ROS1")
     PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
   )
 
+  target_compile_options(detector
+    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+  )
+
   #---------------------------------------------------------------------------------------
   # add projects that depend on
   #---------------------------------------------------------------------------------------
@@ -191,6 +199,8 @@ if(ROS_EDITION STREQUAL "ROS1")
   add_dependencies(livox_to_pointcloud2 ${PROJECT_NAME}_gencfg)
 
   add_dependencies(pointcloud2_to_livox ${PROJECT_NAME}_gencfg)
+
+  add_dependencies(detector ${PROJECT_NAME}_gencfg)
 
   #---------------------------------------------------------------------------------------
   # include file
@@ -229,6 +239,14 @@ if(ROS_EDITION STREQUAL "ROS1")
     ${APR_INCLUDE_DIRS}
   )
 
+  target_include_directories(detector
+    PUBLIC
+    ${catkin_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${APR_INCLUDE_DIRS}
+    src
+  )
+
   #---------------------------------------------------------------------------------------
   # link libraries
   #---------------------------------------------------------------------------------------
@@ -265,6 +283,12 @@ if(ROS_EDITION STREQUAL "ROS1")
     ${APR_LIBRARIES}
   )
 
+  target_link_libraries(detector
+    ${Boost_LIBRARY}
+    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${APR_LIBRARIES}
+  )
 
   #---------------------------------------------------------------------------------------
   # Install
@@ -309,6 +333,10 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   install(FILES library_pointcloud2_to_livox.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+  install(FILES library_detector.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
 
