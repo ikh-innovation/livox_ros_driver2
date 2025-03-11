@@ -49,6 +49,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   generate_dynamic_reconfigure_options(
+    cfg/Filter.cfg
     cfg/CustomFilter.cfg
     cfg/Detector.cfg
   )
@@ -199,13 +200,15 @@ if(ROS_EDITION STREQUAL "ROS1")
   #---------------------------------------------------------------------------------------
   add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_generate_messages_cpp)
 
-  add_dependencies(custom_filter_nodelet ${PROJECT_NAME}_gencfg)
+  add_dependencies(filter_nodelet ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
-  add_dependencies(livox_to_pointcloud2 ${PROJECT_NAME}_gencfg)
+  add_dependencies(custom_filter_nodelet ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
-  add_dependencies(pointcloud2_to_livox ${PROJECT_NAME}_gencfg)
+  add_dependencies(livox_to_pointcloud2 ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
-  add_dependencies(detector ${PROJECT_NAME}_gencfg)
+  add_dependencies(pointcloud2_to_livox ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
+
+  add_dependencies(detector ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
   #---------------------------------------------------------------------------------------
   # include file
