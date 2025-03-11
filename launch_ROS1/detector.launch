@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<launch>
+	<!--user configure parameters for ros end--> 
+
+	<!-- Nodelet manager -->
+    <node pkg="nodelet" type="nodelet" name="lidar_nodelet_manager" args="manager" output="screen"/>
+
+	<node pkg="nodelet" type="nodelet" name="l_to_p" args="load livox_ros_driver2/Livox2PCL2Nodelet lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="/aristos/livox/lidar"/>
+		<remap from="output_point_cloud" to="lidar_pcl2"/>
+	</node>
+
+	<node pkg="nodelet" type="nodelet" name="detector" args="load livox_ros_driver2/Detector lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="lidar_pcl2"/>
+		<remap from="input_imu" to="/aristos/imu/data"/>
+		<!-- <remap from="output_point_cloud" to="lidar_pcl2"/> -->
+	</node>
+
+	<!-- <node pkg="nodelet" type="nodelet" name="statistical" args="load pcl/StatisticalOutlierRemoval lidar_nodelet_manager" output="screen">
+		<remap from="~input" to="lidar_pcl2" />
+		<remap from="~output" to="lidar_pcl2_filtered" />
+		<param name="~mean_k" value="10"/>
+		<param name="~stddev" value="0.02"/>
+		<param name="~negative" value="false"/>
+	</node>
+
+	<node pkg="nodelet" type="nodelet" name="p_to_l" args="load livox_ros_driver2/PCL2LivoxNodelet lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="lidar_pcl2_filtered"/>
+		<remap from="output_point_cloud" to="lidar_custom"/>
+	</node> -->
+
+</launch>

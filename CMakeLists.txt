@@ -42,10 +42,15 @@ if(ROS_EDITION STREQUAL "ROS1")
     pcl_ros
     nodelet
     pluginlib
+    tf2
+    tf2_ros
+    tf2_eigen
+    rviz_visual_tools
   )
 
   generate_dynamic_reconfigure_options(
     cfg/CustomFilter.cfg
+    cfg/Detector.cfg
   )
 
   ## Find pcl lib
@@ -87,7 +92,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   catkin_package(
     INCLUDE_DIRS src/include
     LIBRARIES ${PROJECT_NAME}_nodelet filter_nodelet custom_filter_nodelet
-    CATKIN_DEPENDS roscpp rospy std_msgs dynamic_reconfigure message_runtime nodelet pcl_ros
+    CATKIN_DEPENDS roscpp rospy std_msgs dynamic_reconfigure message_runtime nodelet pcl_ros tf2_eigen rviz_visual_tools
   )
 
   #---------------------------------------------------------------------------------------
