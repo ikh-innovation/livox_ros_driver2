@@ -49,12 +49,12 @@ void Detector::onInit()
     server_->setCallback(f);
 
     // Subscribers
-    sub_imu_ = nh.subscribe("input_imu", 1, &Detector::imuCallback, this);
     sub_point_cloud_ = nh.subscribe("input_point_cloud", 1, &Detector::pointCloudCallback, this);
 
     // Publishers
     test_pub_ = nh.advertise<sensor_msgs::PointCloud2>("ground", 1);
     test_pub2_ = nh.advertise<sensor_msgs::PointCloud2>("above_ground", 1);
+    test_pub3_ = nh.advertise<sensor_msgs::PointCloud2>("obstacles", 1);
 
     visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("aristos_base_footprint","/rviz_visual_markers"));
     visual_tools2_.reset(new rviz_visual_tools::RvizVisualTools("livox_frame","/rviz_visual_markers2"));
@@ -76,11 +76,27 @@ void Detector::configCallback(livox_ros_driver2::DetectorConfig &config, uint32_
     min_plane_points_ = config.min_plane_points;
     max_height_ = config.max_height;
     model_variance_threshold_ = config.model_variance_threshold;
+    max_obstacle_height_ = config.max_obstacle_height;    
 
-    if (enable_)
+    if (config.use_imu != use_imu_)
     {
-        lock.unlock();
-        conf_cond_.notify_one();
+        use_imu_ = config.use_imu;
+        if (!use_imu_)
+        {
+            sub_imu_.shutdown();
+            std::lock_guard<std::mutex> lock(imu_mutex_);
+            perpendicular_to_ground_ = Eigen::Vector3f{0.0, 0.0, 1.0};
+        }
+        else
+        {
+            sub_imu_ = getMTNodeHandle().subscribe("input_imu", 1, &Detector::imuCallback, this);
+        }
+
+        if (enable_)
+        {
+            lock.unlock();
+            conf_cond_.notify_one();
+        }    
     }    
 }
 
@@ -223,6 +239,8 @@ void Detector::process()
         const double max_height{max_height_};
         const double model_variance_threshold{model_variance_threshold_};
 
+        const double max_obstacle_height{max_obstacle_height_};
+
 
         lock.unlock();
         
@@ -310,17 +328,18 @@ void Detector::process()
         extract.setNegative(true);
         extract.filter(*not_ground);
         std::cout << "Extract not ground: " << watch.getTime() << std::endl;
+        
+        // Clip points that are above a certain height
+        pcl::PointIndices::Ptr high_clip_indices(new pcl::PointIndices);
+        const Eigen::Vector4f high_clip_plane(-coefficients->values[0], -coefficients->values[1], -coefficients->values[2], -coefficients->values[3] + max_obstacle_height);
+        pcl::PlaneClipper3D<pcl::PointXYZI> high_clipper(high_clip_plane);
+        high_clipper.clipPointCloud3D(*not_ground, high_clip_indices->indices);
 
-        // Calculate normals of ground
-        // watch.reset();
-        // pcl::PointCloud<pcl::PointNormal>::Ptr ground_normals (new pcl::PointCloud<pcl::PointNormal>);
-        // pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI> ());
-        // pcl::NormalEstimationOMP<pcl::PointXYZI, pcl::PointNormal> ne;
-        // ne.setSearchMethod(tree);
-        // ne.setInputCloud(ground);
-        // ne.setRadiusSearch (normal_radius);
-        // ne.compute(*ground_normals);
-        // std::cout << "Normal: " << watch.getTime() << std::endl;
+        pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles(new pcl::PointCloud<pcl::PointXYZI>);
+        extract.setInputCloud(not_ground);
+        extract.setIndices(high_clip_indices);
+        extract.setNegative(false);
+        extract.filter(*obstacles);
 
 
         sensor_msgs::PointCloud2::Ptr output{new sensor_msgs::PointCloud2()};
@@ -330,6 +349,10 @@ void Detector::process()
         sensor_msgs::PointCloud2::Ptr output2{new sensor_msgs::PointCloud2()};
         pcl::toROSMsg(*not_ground, *output2);
         test_pub2_.publish(output2);
+
+        sensor_msgs::PointCloud2::Ptr output3{new sensor_msgs::PointCloud2()};
+        pcl::toROSMsg(*obstacles, *output3);
+        test_pub3_.publish(output3);
     }
 }
 

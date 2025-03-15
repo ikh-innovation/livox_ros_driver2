@@ -52,6 +52,7 @@ private:
     
     ros::Publisher test_pub_;
     ros::Publisher test_pub2_;
+    ros::Publisher test_pub3_;
     ros::Subscriber sub_imu_;
     ros::Subscriber sub_point_cloud_;
 
@@ -69,8 +70,10 @@ private:
     double max_height_;
     double model_variance_threshold_;
     double max_range_;
+    double max_obstacle_height_;
 
     bool enable_;
+    bool use_imu_{false};
     double voxel_size_;
     std::mutex imu_mutex_;
     std::mutex conf_mutex_;

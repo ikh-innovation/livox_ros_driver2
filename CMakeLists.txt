@@ -111,12 +111,10 @@ if(ROS_EDITION STREQUAL "ROS1")
   set(CMAKE_CXX_EXTENSIONS OFF)
 
   ## make sure the livox_lidar_sdk_shared library is installed
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+  unset(LIVOX_LIDAR_SDK_LIBRARY CACHE)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".so")  
   find_library(LIVOX_LIDAR_SDK_LIBRARY  liblivox_lidar_sdk_shared.so  /usr/local/lib)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
-  # set(LIVOX_LIDAR_SDK_LIBRARY /usr/local/lib/liblivox_lidar_sdk_shared.so)
-  message(${LIVOX_LIDAR_SDK_LIBRARY})
-  message(${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 
   ## PCL library
