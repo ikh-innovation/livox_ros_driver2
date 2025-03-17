@@ -239,6 +239,31 @@ void Lddc::PrepareExit(void) {
   }
 }
 
+std::vector<std::string> Lddc::GetPCDTopics(void)
+{
+  std::vector<std::string> topics{};
+
+  if (use_multi_topic_) 
+  {
+    for (uint32_t i = 0; i < lds_->lidar_count_; i++) 
+    {
+      if (private_pub_[i] != nullptr)
+      {
+        topics.push_back(private_pub_[i]->getTopic());
+      }
+    }
+  }   
+  else 
+  {
+    if (global_pub_ != nullptr)
+    {
+      topics.push_back(global_pub_->getTopic());
+    }    
+  }
+
+  return topics;
+}
+
 void Lddc::PublishPointcloud2(LidarDataQueue *queue, uint8_t index) {
   while(!QueueIsEmpty(queue)) {
     StoragePacket pkg;

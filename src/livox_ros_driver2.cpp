@@ -51,7 +51,7 @@ void DriverNode::onInit()
   DRIVER_INFO(this, "Livox Ros Driver2 Version: %s", LIVOX_ROS_DRIVER2_VERSION_STRING);
 
   /** Init default system parameter */
-  int xfer_format = kPointCloud2Msg;
+  xfer_format_ = kPointCloud2Msg;
   int multi_topic = 0;
   int data_src = kSourceRawLidar;
   double publish_freq  = 10.0; /* Hz */
@@ -61,7 +61,7 @@ void DriverNode::onInit()
   bool imu_bag   = false;
   bool sample_at_startup = false;
 
-  private_nh.getParam("xfer_format", xfer_format);
+  private_nh.getParam("xfer_format", xfer_format_);
   private_nh.getParam("multi_topic", multi_topic);
   private_nh.getParam("data_src", data_src);
   private_nh.getParam("publish_freq", publish_freq);
@@ -84,7 +84,7 @@ void DriverNode::onInit()
   future_ = exit_signal_.get_future();
 
   /** Lidar data distribute control and lidar data source set */
-  lddc_ptr_ = std::make_unique<Lddc>(xfer_format, multi_topic, data_src, output_type, publish_freq, frame_id, lidar_bag, imu_bag);
+  lddc_ptr_ = std::make_unique<Lddc>(xfer_format_, multi_topic, data_src, output_type, publish_freq, frame_id, lidar_bag, imu_bag);
   lddc_ptr_->SetRosNode(this);
 
   if (data_src == kSourceRawLidar) {
@@ -254,8 +254,49 @@ bool DriverNode::SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs:
     cv_.wait(lock, [this, actual_lidar_count]{ return (callbacks_done_ == actual_lidar_count); });
   }
 
-  res.success = callbacks_status_;
-  res.message = res.success ? "Work mode changed successfully" : "Failed to change work mode";
+  if (req.data && callbacks_status_)
+  {
+    std::vector<std::string> topics = lddc_ptr_->GetPCDTopics();
+    res.success = true;
+    for(const auto& topic: topics)
+    {
+      const std::string resolved_topic{getNodeHandle().resolveName(topic, true)};
+      if (kPointCloud2Msg == xfer_format_) 
+      {
+        const auto msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(resolved_topic, ros::Duration(wait_timeout_));
+        if (msg == nullptr)
+        {
+          res.success = false;
+          break;
+        }
+      } 
+      else if (kLivoxCustomMsg == xfer_format_) 
+      {
+        const auto msg = ros::topic::waitForMessage<livox_ros_driver2::CustomMsg>(resolved_topic, ros::Duration(wait_timeout_));
+        if (msg == nullptr)
+        {
+          res.success = false;
+          break;
+        }
+      } 
+      else if (kPclPxyziMsg == xfer_format_) 
+      {
+        const auto msg = ros::topic::waitForMessage<pcl::PointCloud<pcl::PointXYZI>>(resolved_topic, ros::Duration(wait_timeout_));
+        if (msg == nullptr)
+        {
+          res.success = false;
+          break;
+        }
+      }
+    }
+    res.message = res.success ? "Work mode changed successfully" : "Timed out while waiting for pointcloud topic";
+  }
+  else
+  {
+    res.success = callbacks_status_;
+    res.message = res.success ? "Work mode changed successfully" : "Failed to change work mode";
+  }
+
   return true;
 }
 

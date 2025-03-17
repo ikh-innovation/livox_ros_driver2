@@ -60,6 +60,8 @@ class DriverNode final : public nodelet::Nodelet {
   std::promise<void> exit_signal_;
   std::condition_variable cv_;
   std::mutex mtx_;
+  int xfer_format_;
+  uint wait_timeout_{20};
   uint callbacks_done_;
   bool callbacks_status_;
  private:
