@@ -89,7 +89,7 @@ class Lddc final {
   void DistributeStateInfo(void);
   void CreateBagFile(const std::string &file_name);
   void PrepareExit(void);
-  std::vector<std::string> GetPCDTopics(void);
+  std::vector<std::string> GetStateTopics(void);
 
   uint8_t GetTransferFormat(void) { return transfer_format_; }
   uint8_t IsMultiTopic(void) { return use_multi_topic_; }

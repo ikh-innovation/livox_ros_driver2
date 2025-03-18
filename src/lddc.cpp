@@ -239,7 +239,7 @@ void Lddc::PrepareExit(void) {
   }
 }
 
-std::vector<std::string> Lddc::GetPCDTopics(void)
+std::vector<std::string> Lddc::GetStateTopics(void)
 {
   std::vector<std::string> topics{};
 
@@ -247,17 +247,17 @@ std::vector<std::string> Lddc::GetPCDTopics(void)
   {
     for (uint32_t i = 0; i < lds_->lidar_count_; i++) 
     {
-      if (private_pub_[i] != nullptr)
+      if (private_state_info_pub_[i] != nullptr)
       {
-        topics.push_back(private_pub_[i]->getTopic());
+        topics.push_back(private_state_info_pub_[i]->getTopic());
       }
     }
   }   
   else 
   {
-    if (global_pub_ != nullptr)
+    if (global_state_info_pub_ != nullptr)
     {
-      topics.push_back(global_pub_->getTopic());
+      topics.push_back(global_state_info_pub_->getTopic());
     }    
   }
 
