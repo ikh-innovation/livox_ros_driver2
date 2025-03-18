@@ -15,6 +15,10 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/plane_clipper3D.h>
 #include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/extract_clusters.h>
+
+#include <jsk_recognition_msgs/BoundingBox.h>
+#include <jsk_recognition_msgs/BoundingBoxArray.h>
 
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/buffer.h>
@@ -55,6 +59,7 @@ void Detector::onInit()
     test_pub_ = nh.advertise<sensor_msgs::PointCloud2>("ground", 1);
     test_pub2_ = nh.advertise<sensor_msgs::PointCloud2>("above_ground", 1);
     test_pub3_ = nh.advertise<sensor_msgs::PointCloud2>("obstacles", 1);
+    pub_jsk_bboxes_ = nh.advertise<jsk_recognition_msgs::BoundingBoxArray>("obstacles_bbox", 1);
 
     visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("aristos_base_footprint","/rviz_visual_markers"));
     visual_tools2_.reset(new rviz_visual_tools::RvizVisualTools("livox_frame","/rviz_visual_markers2"));
@@ -76,7 +81,10 @@ void Detector::configCallback(livox_ros_driver2::DetectorConfig &config, uint32_
     min_plane_points_ = config.min_plane_points;
     max_height_ = config.max_height;
     model_variance_threshold_ = config.model_variance_threshold;
-    max_obstacle_height_ = config.max_obstacle_height;    
+    max_obstacle_height_ = config.max_obstacle_height;
+    cluster_tolerance_ = config.cluster_tolerance;
+    min_cluster_size_ = config.min_cluster_size;
+    max_cluster_size_ = config.max_cluster_size_;
 
     if (config.use_imu != use_imu_)
     {
@@ -240,7 +248,9 @@ void Detector::process()
         const double model_variance_threshold{model_variance_threshold_};
 
         const double max_obstacle_height{max_obstacle_height_};
-
+        const double cluster_tolerance{cluster_tolerance_};
+        const uint min_cluster_size{min_cluster_size_};
+        const uint max_cluster_size{max_cluster_size_};
 
         lock.unlock();
         
@@ -330,6 +340,7 @@ void Detector::process()
         std::cout << "Extract not ground: " << watch.getTime() << std::endl;
         
         // Clip points that are above a certain height
+        watch.reset();
         pcl::PointIndices::Ptr high_clip_indices(new pcl::PointIndices);
         const Eigen::Vector4f high_clip_plane(-coefficients->values[0], -coefficients->values[1], -coefficients->values[2], -coefficients->values[3] + max_obstacle_height);
         pcl::PlaneClipper3D<pcl::PointXYZI> high_clipper(high_clip_plane);
@@ -340,6 +351,46 @@ void Detector::process()
         extract.setIndices(high_clip_indices);
         extract.setNegative(false);
         extract.filter(*obstacles);
+        std::cout << "Clip tall obstacles: " << watch.getTime() << std::endl;
+
+        // Perform Euclidean Clustering
+        watch.reset();
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
+        tree->setInputCloud(obstacles);
+        std::vector<pcl::PointIndices> cluster_indices;
+        pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+        ec.setClusterTolerance(cluster_tolerance);
+        ec.setMinClusterSize(min_cluster_size);
+        ec.setMaxClusterSize(max_cluster_size);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(obstacles);
+        ec.extract(cluster_indices);
+        std::cout << "Euclidean clustering: " << watch.getTime() << std::endl;
+
+        // Cluster Bounding Boxes
+        jsk_recognition_msgs::BoundingBoxArray jsk_bboxes;
+        jsk_bboxes.header = bbox_header;
+
+        for (auto &box : curr_boxes_) {
+            geometry_msgs::Pose pose, pose_transformed;
+            pose.position.x = box.position(0);
+            pose.position.y = box.position(1);
+            pose.position.z = box.position(2);
+            pose.orientation.w = box.quaternion.w();
+            pose.orientation.x = box.quaternion.x();
+            pose.orientation.y = box.quaternion.y();
+            pose.orientation.z = box.quaternion.z();
+            tf2::doTransform(pose, pose_transformed, transform_stamped);
+        
+            jsk_bboxes.boxes.emplace_back(
+                transformJskBbox(box, bbox_header, pose_transformed));
+            autoware_objects.objects.emplace_back(
+                transformAutowareObject(box, bbox_header, pose_transformed));
+          }
+          pub_jsk_bboxes_.publish(std::move(jsk_bboxes));
+         
+            curr_boxes_.clear();
+
 
 
         sensor_msgs::PointCloud2::Ptr output{new sensor_msgs::PointCloud2()};

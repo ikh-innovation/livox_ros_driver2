@@ -53,6 +53,7 @@ private:
     ros::Publisher test_pub_;
     ros::Publisher test_pub2_;
     ros::Publisher test_pub3_;
+    ros::Publisher pub_jsk_bboxes_;
     ros::Subscriber sub_imu_;
     ros::Subscriber sub_point_cloud_;
 
@@ -65,6 +66,9 @@ private:
     uint num_scans_;
     uint max_iterations_;
     uint min_plane_points_;
+    uint min_cluster_size_;
+    uint max_cluster_size_;
+    double cluster_tolerance_;
     double distance_threshold_;
     double eps_angle_;
     double max_height_;
