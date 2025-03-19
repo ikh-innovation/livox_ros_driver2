@@ -85,6 +85,7 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>rviz_visual_tools</depend>
+  <depend>jsk_recognition_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

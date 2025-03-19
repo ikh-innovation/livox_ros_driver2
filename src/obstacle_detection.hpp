@@ -53,6 +53,7 @@ private:
     ros::Publisher test_pub_;
     ros::Publisher test_pub2_;
     ros::Publisher test_pub3_;
+    ros::Publisher test_pub4_;
     ros::Publisher pub_jsk_bboxes_;
     ros::Subscriber sub_imu_;
     ros::Subscriber sub_point_cloud_;
