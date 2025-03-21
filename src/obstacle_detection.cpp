@@ -233,7 +233,7 @@ void Detector::process()
 
     while (ros::ok()) 
     {
-        visual_tools_->deleteAllMarkers();
+        // visual_tools_->deleteAllMarkers();
         // visual_tools2_->deleteAllMarkers();
         std::unique_lock<std::mutex> lock(conf_mutex_);
         conf_cond_.wait(lock, [this] { return enable_ || !ros::ok() || stop_thread_.load(); });
@@ -442,8 +442,6 @@ void Detector::process()
             // Compute principal directions & Transform the original cloud to PCA coordinates            
             pca.setInputCloud(plane_projected);
             pca.project(*plane_projected, *pca_projected_cloud);
-            // pca.setInputCloud(obstacles);
-            // pca.setIndices(c_indices_ptr);
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_line_rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
             extract.setInputCloud(obstacles);
             extract.setIndices(c_indices_ptr);
@@ -466,38 +464,58 @@ void Detector::process()
             
 
             pca.project(*plane_projected, *pca_projected_cloud);
-            const auto eigen_vectors = pca.getEigenVectors();
-            std::cout << coefficients->values[0] << " " << coefficients->values[1] << " " << coefficients->values[2] << std::endl;
-            std::cout << eigen_vectors << std::endl;
-            std::cout << pca.getEigenValues() << std::endl;
+            Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();
+            eigen_vectors.col(2) = eigen_vectors.col(0).cross(eigen_vectors.col(1));
 
-            // Scale for the arrows
-            const double arrow_scale = 1.5;
+            // // Scale for the arrows
+            // const double arrow_scale = 1.5;
 
-            // Eigenvector 1 (principal direction)
-            geometry_msgs::Point start_point, end_point;
-            start_point.x = centroid[0];
-            start_point.y = centroid[1];
-            start_point.z = centroid[2];
-            end_point.x = centroid[0] + eigen_vectors(0, 0) * arrow_scale;
-            end_point.y = centroid[1] + eigen_vectors(1, 0) * arrow_scale;
-            end_point.z = centroid[2] + eigen_vectors(2, 0) * arrow_scale;
-            visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::RED, rviz_visual_tools::scales::MEDIUM);
+            // // Eigenvector 1 (principal direction)
+            // geometry_msgs::Point start_point, end_point;
+            // start_point.x = centroid[0];
+            // start_point.y = centroid[1];
+            // start_point.z = centroid[2];
+            // end_point.x = centroid[0] + eigen_vectors(0, 0) * arrow_scale;
+            // end_point.y = centroid[1] + eigen_vectors(1, 0) * arrow_scale;
+            // end_point.z = centroid[2] + eigen_vectors(2, 0) * arrow_scale;
+            // visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::RED, rviz_visual_tools::scales::MEDIUM);
+            // // addLine needs PointXYZ
+            // pcl::PointXYZ start_point_pcl, end_point_pcl;
+            // start_point_pcl.x = start_point.x;
+            // start_point_pcl.y = start_point.y;
+            // start_point_pcl.z = start_point.z;
+            // end_point_pcl.x = end_point.x;
+            // end_point_pcl.y = end_point.y;
+            // end_point_pcl.z = end_point.z;
+            // viewer->addLine(start_point_pcl, end_point_pcl, 1.0, 0.0, 0.0, "line" + std::to_string(rand()));
 
-            // Eigenvector 2
-            end_point.x = centroid[0] + eigen_vectors(0, 1) * arrow_scale;
-            end_point.y = centroid[1] + eigen_vectors(1, 1) * arrow_scale;
-            end_point.z = centroid[2] + eigen_vectors(2, 1) * arrow_scale;
-            visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::GREEN, rviz_visual_tools::scales::MEDIUM);
+            // // Eigenvector 2
+            // end_point.x = centroid[0] + eigen_vectors(0, 1) * arrow_scale;
+            // end_point.y = centroid[1] + eigen_vectors(1, 1) * arrow_scale;
+            // end_point.z = centroid[2] + eigen_vectors(2, 1) * arrow_scale;
+            // visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::GREEN, rviz_visual_tools::scales::MEDIUM);
+            // start_point_pcl.x = start_point.x;
+            // start_point_pcl.y = start_point.y;
+            // start_point_pcl.z = start_point.z;
+            // end_point_pcl.x = end_point.x;
+            // end_point_pcl.y = end_point.y;
+            // end_point_pcl.z = end_point.z;
+            // viewer->addLine(start_point_pcl, end_point_pcl, 0.0, 1.0, 0.0, "line" + std::to_string(rand()));
+            // // Eigenvector 3
+            // end_point.x = centroid[0] + eigen_vectors(0, 2) * arrow_scale;
+            // end_point.y = centroid[1] + eigen_vectors(1, 2) * arrow_scale;
+            // end_point.z = centroid[2] + eigen_vectors(2, 2) * arrow_scale;
+            // visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::BLUE, rviz_visual_tools::scales::MEDIUM);
+            // start_point_pcl.x = start_point.x;
+            // start_point_pcl.y = start_point.y;
+            // start_point_pcl.z = start_point.z;
+            // end_point_pcl.x = end_point.x;
+            // end_point_pcl.y = end_point.y;
+            // end_point_pcl.z = end_point.z;
+            // viewer->addLine(start_point_pcl, end_point_pcl, 0.0, 0.0, 1.0, "line" + std::to_string(rand()));
 
-            // Eigenvector 3
-            end_point.x = centroid[0] + eigen_vectors(0, 2) * arrow_scale;
-            end_point.y = centroid[1] + eigen_vectors(1, 2) * arrow_scale;
-            end_point.z = centroid[2] + eigen_vectors(2, 2) * arrow_scale;
-            visual_tools_->publishArrow(start_point, end_point, rviz_visual_tools::colors::BLUE, rviz_visual_tools::scales::MEDIUM);
-
-            // Trigger RViz update
-            visual_tools_->trigger();
+            // // Trigger RViz update
+            // visual_tools_->trigger();
 
             // Get the minimum and maximum points of the transformed cloud.
             pcl::getMinMax3D(*pca_projected_cloud, min_pt, max_pt);
@@ -508,12 +526,6 @@ void Detector::process()
             const Eigen::Quaternionf quaternion(eigen_vectors);  
             const Eigen::Vector3f position = eigen_vectors * meanDiagonal + centroid.head<3>();
             const Eigen::Vector3f dimension((max_pt(0) - min_pt(0)), (max_pt(1) - min_pt(1)), box_height);
-            // const Eigen::Vector3f dimension((max_pt(0) - min_pt(0)), (max_pt(1) - min_pt(1)), (max_pt(2) - min_pt(2)));
-            
-            // pcl::getMinMax3D(*obstacles, c_indices, min_pt, max_pt);
-            // const Eigen::Quaternionf quaternion(0,0,0,1);
-            // const Eigen::Vector3f position((max_pt(0) + min_pt(0)) / 2, (max_pt(1) + min_pt(1)) / 2, (max_pt(2) + min_pt(2)) / 2);
-            // const Eigen::Vector3f dimension((max_pt(0) - min_pt(0)), (max_pt(1) - min_pt(1)), (max_pt(2) - min_pt(2)));
             
             jsk_recognition_msgs::BoundingBox jsk_bbox;
             jsk_bbox.header = jsk_bboxes.header;
@@ -532,7 +544,7 @@ void Detector::process()
             jsk_bboxes.boxes.push_back(jsk_bbox);
         }
 
-        pub_jsk_bboxes_.publish(std::move(jsk_bboxes));
+        pub_jsk_bboxes_.publish(jsk_bboxes);
 
         sensor_msgs::PointCloud2::Ptr output{new sensor_msgs::PointCloud2()};
         pcl::toROSMsg(*ground, *output);
@@ -550,12 +562,26 @@ void Detector::process()
         pcl::toROSMsg(*lines_cloud, *output4);
         test_pub4_.publish(output4);
 
-        // viewer->removeAllShapes();
-        // viewer->removeAllPointClouds();
+        
 
-        // viewer->addPointCloud<pcl::PointXYZRGB> (lines_cloud, "Obstacles");
+        // // visualize obstacles and bounding boxes
+        // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(lines_cloud);
+        // viewer->addPointCloud<pcl::PointXYZRGB> (lines_cloud, rgb, "Obstacles");
         // viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Obstacles");
-        // viewer->spinOnce(100);  
+        // for (const auto& box: jsk_bboxes.boxes)
+        // {
+        //     Eigen::Vector3f position(box.pose.position.x, box.pose.position.y, box.pose.position.z);
+        //     Eigen::Quaternionf quaternion(box.pose.orientation.w, box.pose.orientation.x, box.pose.orientation.y, box.pose.orientation.z);
+        //     // Eigen::Quaternionf quaternion(1,0,0,0);
+        //     Eigen::Vector3f dimension(box.dimensions.x, box.dimensions.y, box.dimensions.z);
+        //     std::string name = "box" + std::to_string(rand());
+        //     viewer->addCube(position, quaternion, dimension(0), dimension(1), dimension(2), name);
+        //     viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, name);
+        //     viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 0.2, name);
+        // }
+        // viewer->spinOnce(100);
+
+          
     }
 }
 
