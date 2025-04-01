@@ -1,32 +1,28 @@
 #include <obstacle_detection.hpp>
 #include <pluginlib/class_list_macros.h>
 
+#include <pcl/common/pca.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-
 #include <pcl/common/time.h>
-// #include <pcl_ros/transforms.h>
 #include <pcl/ModelCoefficients.h>
-
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/features/normal_3d_omp.h>
 #include <pcl/filters/extract_indices.h>
-// #include <pcl/filters/conditional_removal.h>
+#include <pcl/filters/plane_clipper3D.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/plane_clipper3D.h>
-#include <pcl/features/normal_3d_omp.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/common/pca.h>
-#include <pcl/visualization/pcl_visualizer.h>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include <jsk_recognition_msgs/BoundingBox.h>
 #include <jsk_recognition_msgs/BoundingBoxArray.h>
-
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <geometry_msgs/TransformStamped.h>
 
 namespace obstacle_detection
 {
@@ -86,6 +82,7 @@ void Detector::configCallback(livox_ros_driver2::DetectorConfig &config, uint32_
     max_height_ = config.max_height;
     model_variance_threshold_ = config.model_variance_threshold;
     max_obstacle_height_ = config.max_obstacle_height;
+    min_obstacle_height_ = config.min_obstacle_height;
     cluster_tolerance_ = config.cluster_tolerance;
     min_cluster_size_ = config.min_cluster_size;
     max_cluster_size_ = config.max_cluster_size;
@@ -102,13 +99,13 @@ void Detector::configCallback(livox_ros_driver2::DetectorConfig &config, uint32_
         else
         {
             sub_imu_ = getMTNodeHandle().subscribe("input_imu", 1, &Detector::imuCallback, this);
-        }
-
-        if (enable_)
-        {
-            lock.unlock();
-            conf_cond_.notify_one();
-        }    
+        }        
+    }
+    
+    if (enable_)
+    {
+        lock.unlock();
+        conf_cond_.notify_one();
     }    
 }
 
@@ -257,6 +254,7 @@ void Detector::process()
         const double model_variance_threshold{model_variance_threshold_};
 
         const double max_obstacle_height{max_obstacle_height_};
+        const double min_obstacle_height{min_obstacle_height_};
         const double cluster_tolerance{cluster_tolerance_};
         const uint min_cluster_size{min_cluster_size_};
         const uint max_cluster_size{max_cluster_size_};
@@ -432,6 +430,14 @@ void Detector::process()
             pcl::getMinMax3D(*line_projected, min_pt, max_pt);
             const double box_height = (max_pt.head<3>() - min_pt.head<3>()).norm();
 
+            // Compute the ground clearance of the cluster
+            const double ground_clearance = std::abs(coefficients->values[0]*max_pt[0] + coefficients->values[1]*max_pt[1] + coefficients->values[2]*max_pt[2] + coefficients->values[3]) / 
+                                            std::sqrt(coefficients->values[0]*coefficients->values[0] + coefficients->values[1]*coefficients->values[1] + coefficients->values[2]*coefficients->values[2]);
+
+            if (ground_clearance < min_obstacle_height)
+            {
+                continue;
+            }
             // Project the cluster points on a plane parallel to the ground plane that passes through the centroid
             plane_coefficients->values[3] = -(coefficients->values[0]*centroid[0] + coefficients->values[1]*centroid[1] + coefficients->values[2]*centroid[2]);
             

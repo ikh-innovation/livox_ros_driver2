@@ -6,28 +6,15 @@
 #include <atomic>
 #include <thread>
 #include <condition_variable>
-// #include <cassert>
-// #include <cstddef>
+
 #include <ros/ros.h>
-#include <nodelet/nodelet.h>
-#include <dynamic_reconfigure/server.h>
-
-#include <pcl_ros/point_cloud.h>
-
-// #include <pcl/visualization/pcl_visualizer.h>
-
 #include <sensor_msgs/Imu.h>
+#include <nodelet/nodelet.h>
+#include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <dynamic_reconfigure/server.h>
 #include "livox_ros_driver2/DetectorConfig.h"
-
 #include <rviz_visual_tools/rviz_visual_tools.h>
-
-
-// #include <nav_msgs/Odometry.h>
-
-
-// #include <tf2_ros/transform_broadcaster.h>
-// #include <dynamic_reconfigure/server.h>
 
 namespace obstacle_detection
 {
@@ -48,7 +35,6 @@ private:
 
     rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
     rviz_visual_tools::RvizVisualToolsPtr visual_tools2_;
-
     
     ros::Publisher test_pub_;
     ros::Publisher test_pub2_;
@@ -76,6 +62,7 @@ private:
     double model_variance_threshold_;
     double max_range_;
     double max_obstacle_height_;
+    double min_obstacle_height_;
 
     bool enable_;
     bool use_imu_{false};
