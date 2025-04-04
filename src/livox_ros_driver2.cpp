@@ -274,7 +274,6 @@ bool DriverNode::SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs:
     for (int i = 0; i < actual_lidar_count; i++)
     {
       const std::string& topic_name = state_topics_[i];
-      std::cout << topic_name << std::endl;
       state_subs_.push_back(getMTNodeHandle().subscribe<livox_ros_driver2::StateInfoMsg>(topic_name, 1, [this, i](const livox_ros_driver2::StateInfoMsgConstPtr& msg){this->state_cb(msg, i);}));
     }
     
