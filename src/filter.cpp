@@ -195,7 +195,7 @@ namespace livox_ros
                     }
                     catch (const std::bad_alloc&)
                     {
-                        ROS_ERROR ("Failed to allocate %lu indices.\n", (output_cloud->width * output_cloud->height));
+                        ROS_ERROR ("Failed to allocate %u indices.\n", (output_cloud->width * output_cloud->height));
                         return;
                     }
                     if (indices_size < original_indices_.size())

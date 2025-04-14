@@ -47,7 +47,6 @@ typedef enum {
 } TransferType;
 
 /** Type-Definitions based on ROS versions */
-#ifdef BUILDING_ROS1
 using Publisher = ros::Publisher;
 using PublisherPtr = ros::Publisher*;
 using PointCloud2 = sensor_msgs::PointCloud2;
@@ -58,15 +57,6 @@ using CustomMsgPtr = livox_ros_driver2::CustomMsgPtr;
 using CustomPoint = livox_ros_driver2::CustomPoint;
 using ImuMsg = sensor_msgs::Imu;
 using StateInfoMsg = livox_ros_driver2::StateInfoMsg;
-#elif defined BUILDING_ROS2
-template <typename MessageT> using Publisher = rclcpp::Publisher<MessageT>;
-using PublisherPtr = std::shared_ptr<rclcpp::PublisherBase>;
-using PointCloud2 = sensor_msgs::msg::PointCloud2;
-using PointField = sensor_msgs::msg::PointField;
-using CustomMsg = livox_ros_driver2::msg::CustomMsg;
-using CustomPoint = livox_ros_driver2::msg::CustomPoint;
-using ImuMsg = sensor_msgs::msg::Imu;
-#endif
 
 using PointCloud = pcl::PointCloud<pcl::PointXYZI>;
 
@@ -74,13 +64,8 @@ class DriverNode;
 
 class Lddc final {
  public:
-#ifdef BUILDING_ROS1
   Lddc(int format, int multi_topic, int data_src, int output_type, double frq,
       std::string &frame_id, bool lidar_bag, bool imu_bag);
-#elif defined BUILDING_ROS2
-  Lddc(int format, int multi_topic, int data_src, int output_type, double frq,
-      std::string &frame_id);
-#endif
   ~Lddc();
 
   int RegisterLds(Lds *lds);
@@ -132,10 +117,6 @@ class Lddc final {
   void FillPointsToCustomMsg(CustomMsgPtr& livox_msg, LivoxPointXyzrtlt* src_point, uint32_t num,
       uint32_t offset_time, uint32_t point_interval, uint32_t echo_num);
 
-#ifdef BUILDING_ROS2
-  PublisherPtr CreatePublisher(uint8_t msg_type, std::string &topic_name, uint32_t queue_size);
-#endif
-
   PublisherPtr GetCurrentPublisher(uint8_t index);
   PublisherPtr GetCurrentImuPublisher(uint8_t index);
   PublisherPtr GetCurrentStateInfoPublisher(uint8_t index);
@@ -149,7 +130,6 @@ class Lddc final {
   uint32_t publish_period_ns_;
   std::string frame_id_;
 
-#ifdef BUILDING_ROS1
   bool enable_lidar_bag_;
   bool enable_imu_bag_;
   PublisherPtr private_pub_[kMaxSourceLidar];
@@ -159,12 +139,6 @@ class Lddc final {
   PublisherPtr private_state_info_pub_[kMaxSourceLidar];
   PublisherPtr global_state_info_pub_;
   rosbag::Bag *bag_;
-#elif defined BUILDING_ROS2
-  PublisherPtr private_pub_[kMaxSourceLidar];
-  PublisherPtr global_pub_;
-  PublisherPtr private_imu_pub_[kMaxSourceLidar];
-  PublisherPtr global_imu_pub_;
-#endif
 
   livox_ros::DriverNode *cur_node_;
 };

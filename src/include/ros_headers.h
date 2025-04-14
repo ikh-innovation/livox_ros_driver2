@@ -25,10 +25,35 @@
 #ifndef ROS_HEADERS_H_
 #define ROS_HEADERS_H_
 
-#ifdef BUILDING_ROS1
-#include "ros1_headers.h"
-#elif defined BUILDING_ROS2
-#include "ros2_headers.h"
-#endif
+#include <thread>
+#include <future>
+
+#include <ros/ros.h>
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
+#include <rosbag/bag.h>
+#include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/PointCloud2.h>
+#include "livox_ros_driver2/CustomMsg.h"
+#include "livox_ros_driver2/CustomPoint.h"
+#include "livox_ros_driver2/StateInfoMsg.h"
+#include "livox_ros_driver2/IpConfig.h"
+#include "livox_ros_driver2/HostIpConfig.h"
+#include "livox_ros_driver2/InstallAttitude.h"
+#include "livox_ros_driver2/FovConfig.h"
+
+
+#define DRIVER_DEBUG(node, ...) ROS_DEBUG(__VA_ARGS__)
+#define DRIVER_INFO(node, ...) ROS_INFO(__VA_ARGS__)
+#define DRIVER_WARN(node, ...) ROS_WARN(__VA_ARGS__)
+#define DRIVER_ERROR(node, ...) ROS_ERROR(__VA_ARGS__)
+#define DRIVER_FATAL(node, ...) ROS_FATAL(__VA_ARGS__)
+
+#define DRIVER_DEBUG_EXTRA(node, EXTRA, ...) ROS_DEBUG_##EXTRA(__VA_ARGS__)
+#define DRIVER_INFO_EXTRA(node, EXTRA, ...) ROS_INFO_##EXTRA(__VA_ARGS__)
+#define DRIVER_WARN_EXTRA(node, EXTRA, ...) ROS_WARN_##EXTRA(__VA_ARGS__)
+#define DRIVER_ERROR_EXTRA(node, EXTRA, ...) ROS_ERROR_##EXTRA(__VA_ARGS__)
+#define DRIVER_FATAL_EXTRA(node, EXTRA, ...) ROS_FATAL_##EXTRA(__VA_ARGS__)
 
 #endif // ROS_HEADERS_H_
