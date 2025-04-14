@@ -45,6 +45,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   generate_dynamic_reconfigure_options(
+    cfg/Filter.cfg
     cfg/CustomFilter.cfg
   )
 
@@ -183,6 +184,8 @@ if(ROS_EDITION STREQUAL "ROS1")
   # add projects that depend on
   #---------------------------------------------------------------------------------------
   add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_generate_messages_cpp)
+
+  add_dependencies(filter_nodelet ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
   add_dependencies(custom_filter_nodelet ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
