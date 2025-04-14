@@ -43,10 +43,18 @@ class LivoxLidarCallback {
                                       uint32_t handle,
                                       LivoxLidarAsyncControlResponse *response,
                                       void *client_data);
+  static void WorkModeAfterBootChangedCallback(livox_status status,
+                                      uint32_t handle,
+                                      LivoxLidarAsyncControlResponse *response,
+                                      void *client_data);
   static void WorkModeChangeOnceCallback(livox_status status,
                                         uint32_t handle,
                                         LivoxLidarAsyncControlResponse *response,
                                         void *client_data);
+  static void RebootCallback(livox_status status, 
+                            uint32_t handle, 
+                            LivoxLidarRebootResponse* response, 
+                            void* client_data);
   static void SetDataTypeCallback(livox_status status, uint32_t handle,
                                   LivoxLidarAsyncControlResponse *response,
                                   void *client_data);

@@ -110,8 +110,15 @@ void DriverNode::onInit()
   imudata_poll_thread_ = std::make_shared<std::thread>(&DriverNode::ImuDataPollThread, this);
   stateinfo_poll_thread_ = std::make_shared<std::thread>(&DriverNode::StateInfoPollThread, this);
 
+  // Get state info topics that are used for the enable_sampling service
+  ros::Duration(5.0).sleep();
+  while (state_topics_.empty())
+  {
+    state_topics_ = lddc_ptr_->GetStateTopics();
+    ros::Duration(1.0).sleep();
+  }
+  
   sampling_service_ = private_nh.advertiseService("livox/enable_sampling", &DriverNode::SetSamplingCallback, this);
-
 }
 PLUGINLIB_EXPORT_CLASS(livox_ros::DriverNode,nodelet::Nodelet)
 
@@ -249,14 +256,56 @@ bool DriverNode::SetSamplingCallback(std_srvs::SetBool::Request  &req, std_srvs:
     }
   }
 
+  // Wait for callbacks to finish
   {
     std::unique_lock<std::mutex> lock(mtx_);
     cv_.wait(lock, [this, actual_lidar_count]{ return (callbacks_done_ == actual_lidar_count); });
+    callbacks_done_ = 0;
   }
 
-  res.success = callbacks_status_;
-  res.message = res.success ? "Work mode changed successfully" : "Failed to change work mode";
+  if (req.data && callbacks_status_)
+  {
+    // Subscribe to state info topics
+    if (state_topics_.size() != actual_lidar_count)
+    {
+      DRIVER_WARN(*this, "State topics vector has different size than the actual_lidar_count! Taking the minimum.");
+      actual_lidar_count = std::min(static_cast<uint8_t>(state_topics_.size()), actual_lidar_count);
+    }
+    for (int i = 0; i < actual_lidar_count; i++)
+    {
+      const std::string& topic_name = state_topics_[i];
+      state_subs_.push_back(getMTNodeHandle().subscribe<livox_ros_driver2::StateInfoMsg>(topic_name, 1, [this, i](const livox_ros_driver2::StateInfoMsgConstPtr& msg){this->state_cb(msg, i);}));
+    }
+    
+    // Wait for callbacks to finish
+    {
+      std::unique_lock<std::mutex> lock(mtx_);
+      res.success = cv_.wait_for(lock, std::chrono::seconds(wait_timeout_), [this, actual_lidar_count]{ return (callbacks_done_ == actual_lidar_count);});
+    }
+
+    // Destroy subscribers
+    state_subs_.clear();
+
+    res.message = res.success ? "Work mode changed successfully" : "Timed out while waiting for state transition";
+  }
+  else
+  {
+    res.success = callbacks_status_;
+    res.message = res.success ? "Work mode changed successfully" : "Failed to change work mode";
+  }
+
   return true;
+}
+
+void DriverNode::state_cb(const livox_ros_driver2::StateInfoMsgConstPtr& msg, int sub_index)
+{
+  if (msg->work_tgt_mode == kLivoxLidarNormal && msg->cur_work_state == kLivoxLidarNormal)
+  {
+    std::unique_lock<std::mutex> lock(mtx_);
+    callbacks_done_ = callbacks_done_ + 1;
+    state_subs_[sub_index].shutdown();
+    cv_.notify_one();
+  }
 }
 
 void DriverNode::WorkModeChangeOnceCallback(livox_status status, uint32_t handle, LivoxLidarAsyncControlResponse *response, void *client_data) 
