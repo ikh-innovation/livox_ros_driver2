@@ -26,6 +26,12 @@
 	<arg name="box_max_x" default="1.0"/>
 	<arg name="box_max_y" default="1.0"/>
 	<arg name="box_max_z" default="1.0"/>
+	<arg name="outer_box_min_x" default="-1.0"/>
+	<arg name="outer_box_min_y" default="-1.0"/>
+	<arg name="outer_box_min_z" default="-1.0"/>
+	<arg name="outer_box_max_x" default="1.0"/>
+	<arg name="outer_box_max_y" default="1.0"/>
+	<arg name="outer_box_max_z" default="1.0"/>
 	<arg name="other_high" default="true"/>
 	<arg name="other_moderate" default="true"/>
 	<arg name="other_low" default="true"/>
@@ -68,9 +74,9 @@
 		<param name="sample_at_startup" type="bool" value="$(arg sample_at_startup)"/>
     </node>
 
-	<node pkg="nodelet" type="nodelet" name="custom_livox_filter" args="load livox_ros_driver2/CustomFilterNodelet lidar_nodelet_manager" output="screen">
+	<node pkg="nodelet" type="nodelet" name="livox_filter" args="load livox_ros_driver2/FilterNodelet lidar_nodelet_manager" output="screen">
 		<remap from="input_point_cloud" to="livox/lidar"/>
-		<remap from="filtered_point_cloud" to="livox/lidar_filtered"/>
+		<remap from="filtered_point_cloud" to="livox/lidar_filtered_pcl"/>
 		<param name="enable_box_filtering" type="bool" value="$(arg enable_box_filtering)"/>
 		<param name="enable_tag_filtering" type="bool" value="$(arg enable_tag_filtering)"/>
 		<param name="box_frame" type="string" value="$(arg box_frame)"/>
@@ -80,6 +86,12 @@
 		<param name="box_max_x" type="double" value="$(arg box_max_x)"/>
 		<param name="box_max_y" type="double" value="$(arg box_max_y)"/>
 		<param name="box_max_z" type="double" value="$(arg box_max_z)"/>
+		<param name="outer_box_min_x" type="double" value="$(arg outer_box_min_x)"/>
+		<param name="outer_box_min_y" type="double" value="$(arg outer_box_min_y)"/>
+		<param name="outer_box_min_z" type="double" value="$(arg outer_box_min_z)"/>
+		<param name="outer_box_max_x" type="double" value="$(arg outer_box_max_x)"/>
+		<param name="outer_box_max_y" type="double" value="$(arg outer_box_max_y)"/>
+		<param name="outer_box_max_z" type="double" value="$(arg outer_box_max_z)"/>
 		<param name="other_high" type="bool" value="$(arg other_high)"/>
 		<param name="other_moderate" type="bool" value="$(arg other_moderate)"/>
 		<param name="other_low" type="bool" value="$(arg other_low)"/>
@@ -96,6 +108,11 @@
 		<param name="rsrv_one" type="bool" value="$(arg rsrv_one)"/>
 		<param name="rsrv_two" type="bool" value="$(arg rsrv_two)"/>
 		<param name="rsrv_three" type="bool" value="$(arg rsrv_three)"/>
+	</node>
+
+	<node pkg="nodelet" type="nodelet" name="p_to_l" args="load livox_ros_driver2/PCL2LivoxNodelet lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="livox/lidar_filtered_pcl"/>
+		<remap from="output_point_cloud" to="livox/lidar_filtered"/>
 	</node>
 
 	<group if="$(arg rviz_enable)">
