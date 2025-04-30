@@ -38,11 +38,6 @@ void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
     return;
   }
 
-  // Reboot lidar to clear errors
-  std::cout << "rebooting lidar, handle: " << handle << std::endl;
-  LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
-  std::this_thread::sleep_for(std::chrono::seconds(10));
-
   LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
 
   LidarDevice* lidar_device = GetLidarDevice(handle, client_data);
@@ -108,19 +103,26 @@ void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
                                  LivoxLidarCallback::SetAttitudeCallback, lds_lidar);
   }
 
-  EnableLivoxLidarImuData(handle, LivoxLidarCallback::EnableLivoxLidarImuDataCallback, lds_lidar);
-
-  SetLivoxLidarWorkModeAfterBoot(handle, kLivoxLidarWorkModeAfterBootWakeUp, LivoxLidarCallback::WorkModeAfterBootChangedCallback, lds_lidar);
-
   LivoxLidarWorkMode work_mode{lds_lidar->sample_at_startup_ ? kLivoxLidarNormal : kLivoxLidarWakeUp};
-  SetLivoxLidarWorkMode(handle, work_mode, WorkModeChangedCallback, lds_lidar);  
+
+  if (lds_lidar->sample_at_startup_)
+  {
+    std::cout << "begin to change work mode to 'Normal', handle: " << handle << std::endl;
+  }
+  else
+  {
+    std::cout << "begin to change work mode to 'Idle', handle: " << handle << std::endl;
+  }
+  SetLivoxLidarWorkMode(handle, work_mode, WorkModeChangedCallback, lds_lidar);
+  
+  EnableLivoxLidarImuData(handle, LivoxLidarCallback::EnableLivoxLidarImuDataCallback, lds_lidar);
   return;
 }
 
 void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
-                                                uint32_t handle,
-                                                LivoxLidarAsyncControlResponse *response,
-                                                void *client_data) {
+                                                 uint32_t handle,
+                                                 LivoxLidarAsyncControlResponse *response,
+                                                 void *client_data) {
   if (status != kLivoxLidarStatusSuccess) {
     LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
     LivoxLidarWorkMode work_mode{lds_lidar->sample_at_startup_ ? kLivoxLidarNormal : kLivoxLidarWakeUp};
@@ -133,36 +135,13 @@ void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
   return;
 }
 
-void LivoxLidarCallback::WorkModeAfterBootChangedCallback(livox_status status,
-                                                 uint32_t handle,
-                                                 LivoxLidarAsyncControlResponse *response,
-                                                 void *client_data) {
-  if (status != kLivoxLidarStatusSuccess) {
-    std::cout << "failed to change work mode after boot, handle: " << handle << ", try again..."<< std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    SetLivoxLidarWorkModeAfterBoot(handle, kLivoxLidarWorkModeAfterBootWakeUp, WorkModeAfterBootChangedCallback, client_data);
-    return;
-  }
-  std::cout << "successfully change work mode after boot, handle: " << handle << std::endl;
-  return;
-}
-
-void LivoxLidarCallback::RebootCallback(livox_status status,
-                                        uint32_t handle,
-                                        LivoxLidarRebootResponse* response,
-                                        void* client_data) {
-  if (response == nullptr) {
-    return;
-  }
-  std::cout << "RebootCallback, status: " << status << ", handle: " << handle << ", return code: " << response->ret_code << std::endl;
-}
-
 void LivoxLidarCallback::WorkModeChangeOnceCallback(livox_status status,
                                                  uint32_t handle,
                                                  LivoxLidarAsyncControlResponse *response,
                                                  void *client_data) {
   if (status != kLivoxLidarStatusSuccess) {
-    std::cout << "failed to change work mode after boot, handle: " << std::endl;
+    std::cout << "failed to change work mode, handle: " << handle << std::endl;
+    return;
   }
 }
 
