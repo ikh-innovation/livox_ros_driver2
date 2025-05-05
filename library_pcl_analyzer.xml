@@ -1,0 +1,5 @@
+<library path="lib/libpcl_analyzer">
+  <class name="livox_ros_driver2/PclAnalyzerNodelet" type="livox_ros::PclAnalyzerNodelet" base_class_type="nodelet::Nodelet">
+    <description>analyzer nodelet for enough points and active topic</description>
+  </class>
+</library>
