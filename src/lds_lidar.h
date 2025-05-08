@@ -78,7 +78,10 @@ class LdsLidar final : public Lds {
   virtual void PrepareExit(void);
 
  public:
-  std::mutex config_mutex_;
+  int reboots_started_;
+  std::mutex config_mutex_;  
+  std::mutex reboot_mutex_;
+  std::condition_variable reboot_cv_;
 
  private:
   std::string path_;

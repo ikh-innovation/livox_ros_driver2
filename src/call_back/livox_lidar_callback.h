@@ -36,6 +36,9 @@ namespace livox_ros {
 
 class LivoxLidarCallback {
  public:
+  static void LidarInfoChangeRebootCallback(const uint32_t handle,
+                                            const LivoxLidarInfo* info,
+                                            void* client_data);
   static void LidarInfoChangeCallback(const uint32_t handle,
                                       const LivoxLidarInfo* info,
                                       void* client_data);

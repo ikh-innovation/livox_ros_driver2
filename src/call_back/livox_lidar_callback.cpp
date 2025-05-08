@@ -24,27 +24,34 @@
 
 #include "livox_lidar_callback.h"
 
-#include <set>
 #include <string>
 #include <thread>
 #include <iostream>
 
 namespace livox_ros {
 
+void LivoxLidarCallback::LidarInfoChangeRebootCallback(const uint32_t handle,
+                                                      const LivoxLidarInfo* info,
+                                                      void* client_data) {
+
+  std::cout << "LidarInfoChangeRebootCallback, handle: " << handle << std::endl;
+  if (client_data == nullptr) {
+    std::cout << "lidar info change reboot callback failed, client data is nullptr" << std::endl;
+    return;
+  }
+  
+  LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
+  return;
+}
+
 void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
                                            const LivoxLidarInfo* info,
                                            void* client_data) {
+  
+  std::cout << "LidarInfoChangeCallback, handle: " << handle << std::endl;
   if (client_data == nullptr) {
     std::cout << "lidar info change callback failed, client data is nullptr" << std::endl;
     return;
-  }
-
-  static std::set<uint32_t> rebooted_handles;
-  if (rebooted_handles.find(handle) == rebooted_handles.end()) {
-    std::cout << "Requesting lidar reboot, handle: " << handle << std::endl;
-    LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
-    rebooted_handles.insert(handle);
-    return; // Wait for the lidar to disconnect and reconnect
   }
 
   LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
@@ -129,12 +136,21 @@ void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
 }
 
 void LivoxLidarCallback::RebootCallback(livox_status status, uint32_t handle, LivoxLidarRebootResponse* response, void* client_data) {
-  if (status == kLivoxLidarStatusSuccess) {
-    std::cout << "Lidar rebooted successfully, handle: " << handle << std::endl;
-    // Optionally, you can trigger setup here or wait for the next LidarInfoChangeCallback
-  } else {
-    std::cout << "Lidar reboot failed, handle: " << handle << std::endl;
+  
+  if (status != kLivoxLidarStatusSuccess) {
+    std::cout << "Lidar reboot failed, handle: " << handle << ", try again..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
+    return;
   }
+
+  std::cout << "Lidar began rebooting successfully, handle: " << handle << std::endl;
+  LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
+  {
+    std::unique_lock<std::mutex> lock(lds_lidar->reboot_mutex_);
+    lds_lidar->reboots_started_ += 1;
+    lds_lidar->reboot_cv_.notify_one();
+  }  
 }
 
 void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
