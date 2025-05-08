@@ -149,6 +149,10 @@ add_library(pointcloud2_to_livox
   src/pointcloud2_to_livox.cpp
 )
 
+add_library(pcl_analyzer
+  src/pcl_analyzer.cpp
+)
+
 #---------------------------------------------------------------------------------------
 # precompile macro and compile option
 #---------------------------------------------------------------------------------------
@@ -169,6 +173,10 @@ target_compile_options(livox_to_pointcloud2
 )
 
 target_compile_options(pointcloud2_to_livox
+  PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+)
+
+target_compile_options(pcl_analyzer
   PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
 )
 
@@ -222,6 +230,11 @@ target_include_directories(pointcloud2_to_livox
   ${APR_INCLUDE_DIRS}
 )
 
+target_include_directories(pcl_analyzer
+  PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  ${APR_INCLUDE_DIRS}
+)
 #---------------------------------------------------------------------------------------
 # link libraries
 #---------------------------------------------------------------------------------------
@@ -253,6 +266,12 @@ target_link_libraries(livox_to_pointcloud2
 )
 
 target_link_libraries(pointcloud2_to_livox
+  ${Boost_LIBRARY}
+  ${catkin_LIBRARIES}
+  ${APR_LIBRARIES}
+)
+
+target_link_libraries(pcl_analyzer
   ${Boost_LIBRARY}
   ${catkin_LIBRARIES}
   ${APR_LIBRARIES}
@@ -302,6 +321,10 @@ install(FILES library_livox_to_pointcloud2.xml
 )
 
 install(FILES library_pointcloud2_to_livox.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(FILES library_pcl_analyzer.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

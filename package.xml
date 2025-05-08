@@ -88,5 +88,6 @@
     <nodelet plugin="${prefix}/library_custom_filter_nodelet.xml" />
     <nodelet plugin="${prefix}/library_livox_to_pointcloud2.xml" />
     <nodelet plugin="${prefix}/library_pointcloud2_to_livox.xml" />
+    <nodelet plugin="${prefix}/library_pcl_analyzer.xml" />
   </export>
 </package>

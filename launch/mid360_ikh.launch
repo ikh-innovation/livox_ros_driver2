@@ -42,6 +42,9 @@
 	<arg name="rsrv_one" default="true"/>
 	<arg name="rsrv_two" default="true"/>
 	<arg name="rsrv_three" default="true"/>
+	<arg name="pcl_topic_timeout" default="10.0"/>
+	<arg name="user_few_points_number_threshold" default="4000"/>
+	<arg name="user_few_points_time_threshold" default="10.0"/>
 	
 	<!--user configure parameters for ros end--> 
 
@@ -96,6 +99,16 @@
 		<param name="rsrv_one" type="bool" value="$(arg rsrv_one)"/>
 		<param name="rsrv_two" type="bool" value="$(arg rsrv_two)"/>
 		<param name="rsrv_three" type="bool" value="$(arg rsrv_three)"/>
+	</node>
+
+	<node pkg="nodelet" type="nodelet" name="analyzer" args="load livox_ros_driver2/PclAnalyzerNodelet lidar_nodelet_manager" output="screen">
+		<remap from="input_point_cloud" to="livox/lidar_filtered"/>
+		<remap from="active" to="livox/active"/>
+		<remap from="enough" to="livox/enough_points"/>
+		<param name="msg_type" type="int" value="$(arg xfer_format)"/>
+		<param name="pcl_topic_timeout" type="double" value="$(arg pcl_topic_timeout)"/>
+		<param name="user_few_points_number_threshold" type="int" value="$(arg user_few_points_number_threshold)"/>
+		<param name="user_few_points_time_threshold" type="double" value="$(arg user_few_points_time_threshold)"/>
 	</node>
 
 	<group if="$(arg rviz_enable)">
