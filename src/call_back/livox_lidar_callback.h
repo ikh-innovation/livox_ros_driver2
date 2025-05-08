@@ -36,14 +36,13 @@ namespace livox_ros {
 
 class LivoxLidarCallback {
  public:
+  static void LidarInfoChangeRebootCallback(const uint32_t handle,
+                                            const LivoxLidarInfo* info,
+                                            void* client_data);
   static void LidarInfoChangeCallback(const uint32_t handle,
                                       const LivoxLidarInfo* info,
                                       void* client_data);
   static void WorkModeChangedCallback(livox_status status,
-                                      uint32_t handle,
-                                      LivoxLidarAsyncControlResponse *response,
-                                      void *client_data);
-  static void WorkModeAfterBootChangedCallback(livox_status status,
                                       uint32_t handle,
                                       LivoxLidarAsyncControlResponse *response,
                                       void *client_data);
@@ -52,9 +51,9 @@ class LivoxLidarCallback {
                                         LivoxLidarAsyncControlResponse *response,
                                         void *client_data);
   static void RebootCallback(livox_status status, 
-                            uint32_t handle, 
-                            LivoxLidarRebootResponse* response, 
-                            void* client_data);
+                              uint32_t handle, 
+                              LivoxLidarRebootResponse* response, 
+                              void* client_data);
   static void SetDataTypeCallback(livox_status status, uint32_t handle,
                                   LivoxLidarAsyncControlResponse *response,
                                   void *client_data);

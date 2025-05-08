@@ -30,18 +30,29 @@
 
 namespace livox_ros {
 
+void LivoxLidarCallback::LidarInfoChangeRebootCallback(const uint32_t handle,
+                                                      const LivoxLidarInfo* info,
+                                                      void* client_data) {
+
+  std::cout << "LidarInfoChangeRebootCallback, handle: " << handle << std::endl;
+  if (client_data == nullptr) {
+    std::cout << "lidar info change reboot callback failed, client data is nullptr" << std::endl;
+    return;
+  }
+  
+  LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
+  return;
+}
+
 void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
                                            const LivoxLidarInfo* info,
                                            void* client_data) {
+  
+  std::cout << "LidarInfoChangeCallback, handle: " << handle << std::endl;
   if (client_data == nullptr) {
     std::cout << "lidar info change callback failed, client data is nullptr" << std::endl;
     return;
   }
-
-  // Reboot lidar to clear errors
-  std::cout << "rebooting lidar, handle: " << handle << std::endl;
-  LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
-  std::this_thread::sleep_for(std::chrono::seconds(10));
 
   LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
 
@@ -108,19 +119,44 @@ void LivoxLidarCallback::LidarInfoChangeCallback(const uint32_t handle,
                                  LivoxLidarCallback::SetAttitudeCallback, lds_lidar);
   }
 
-  EnableLivoxLidarImuData(handle, LivoxLidarCallback::EnableLivoxLidarImuDataCallback, lds_lidar);
-
-  SetLivoxLidarWorkModeAfterBoot(handle, kLivoxLidarWorkModeAfterBootWakeUp, LivoxLidarCallback::WorkModeAfterBootChangedCallback, lds_lidar);
-
   LivoxLidarWorkMode work_mode{lds_lidar->sample_at_startup_ ? kLivoxLidarNormal : kLivoxLidarWakeUp};
-  SetLivoxLidarWorkMode(handle, work_mode, WorkModeChangedCallback, lds_lidar);  
+
+  if (lds_lidar->sample_at_startup_)
+  {
+    std::cout << "begin to change work mode to 'Normal', handle: " << handle << std::endl;
+  }
+  else
+  {
+    std::cout << "begin to change work mode to 'Idle', handle: " << handle << std::endl;
+  }
+  SetLivoxLidarWorkMode(handle, work_mode, WorkModeChangedCallback, lds_lidar);
+  
+  EnableLivoxLidarImuData(handle, LivoxLidarCallback::EnableLivoxLidarImuDataCallback, lds_lidar);
   return;
 }
 
+void LivoxLidarCallback::RebootCallback(livox_status status, uint32_t handle, LivoxLidarRebootResponse* response, void* client_data) {
+  
+  if (status != kLivoxLidarStatusSuccess) {
+    std::cout << "Lidar reboot failed, handle: " << handle << ", try again..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    LivoxLidarRequestReboot(handle, LivoxLidarCallback::RebootCallback, client_data);
+    return;
+  }
+
+  std::cout << "Lidar began rebooting successfully, handle: " << handle << std::endl;
+  LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
+  {
+    std::unique_lock<std::mutex> lock(lds_lidar->reboot_mutex_);
+    lds_lidar->reboots_started_ += 1;
+    lds_lidar->reboot_cv_.notify_one();
+  }  
+}
+
 void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
-                                                uint32_t handle,
-                                                LivoxLidarAsyncControlResponse *response,
-                                                void *client_data) {
+                                                 uint32_t handle,
+                                                 LivoxLidarAsyncControlResponse *response,
+                                                 void *client_data) {
   if (status != kLivoxLidarStatusSuccess) {
     LdsLidar* lds_lidar = static_cast<LdsLidar*>(client_data);
     LivoxLidarWorkMode work_mode{lds_lidar->sample_at_startup_ ? kLivoxLidarNormal : kLivoxLidarWakeUp};
@@ -133,36 +169,13 @@ void LivoxLidarCallback::WorkModeChangedCallback(livox_status status,
   return;
 }
 
-void LivoxLidarCallback::WorkModeAfterBootChangedCallback(livox_status status,
-                                                 uint32_t handle,
-                                                 LivoxLidarAsyncControlResponse *response,
-                                                 void *client_data) {
-  if (status != kLivoxLidarStatusSuccess) {
-    std::cout << "failed to change work mode after boot, handle: " << handle << ", try again..."<< std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    SetLivoxLidarWorkModeAfterBoot(handle, kLivoxLidarWorkModeAfterBootWakeUp, WorkModeAfterBootChangedCallback, client_data);
-    return;
-  }
-  std::cout << "successfully change work mode after boot, handle: " << handle << std::endl;
-  return;
-}
-
-void LivoxLidarCallback::RebootCallback(livox_status status,
-                                        uint32_t handle,
-                                        LivoxLidarRebootResponse* response,
-                                        void* client_data) {
-  if (response == nullptr) {
-    return;
-  }
-  std::cout << "RebootCallback, status: " << status << ", handle: " << handle << ", return code: " << response->ret_code << std::endl;
-}
-
 void LivoxLidarCallback::WorkModeChangeOnceCallback(livox_status status,
                                                  uint32_t handle,
                                                  LivoxLidarAsyncControlResponse *response,
                                                  void *client_data) {
   if (status != kLivoxLidarStatusSuccess) {
-    std::cout << "failed to change work mode after boot, handle: " << std::endl;
+    std::cout << "failed to change work mode, handle: " << handle << std::endl;
+    return;
   }
 }
 

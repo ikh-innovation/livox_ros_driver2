@@ -142,6 +142,7 @@ bool LdsLidar::InitLivoxLidar() {
   }
 
   // fill in lidar devices
+  uint8_t actual_lidar_count{0};
   for (auto& config : user_configs) {
     uint8_t index = 0;
     int8_t ret = g_lds_ldiar->cache_index_.GetFreeIndex(kLivoxLidarType, config.handle, index);
@@ -153,6 +154,8 @@ bool LdsLidar::InitLivoxLidar() {
     p_lidar->lidar_type = kLivoxLidarType;
     p_lidar->livox_config = config;
     p_lidar->handle = config.handle;
+    actual_lidar_count++;
+
 
     LidarExtParameter lidar_param;
     lidar_param.handle = config.handle;
@@ -176,7 +179,27 @@ bool LdsLidar::InitLivoxLidar() {
     pub_handler().AddLidarsExtParam(lidar_param);
   }
 
+  // Reboot Lidar
+  reboots_started_ = 0;
+  SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeRebootCallback, g_lds_ldiar);
+  // Wait for reboots to start taking place
+  {
+    std::unique_lock<std::mutex> lock(reboot_mutex_);
+    reboot_cv_.wait(lock, [this, actual_lidar_count]{ return (reboots_started_ == actual_lidar_count); });
+  }
+  
+  LivoxLidarSdkUninit();
+  std::this_thread::sleep_for(std::chrono::seconds(12));
+
+  // SDK second initialization
+  if (!LivoxLidarSdkInit(path_.c_str())) {
+    std::cout << "Failed to init livox lidar sdk." << std::endl;
+    return false;
+  }
+  
+  // Setup Lidar 
   SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeCallback, g_lds_ldiar);
+  
   return true;
 }
 
