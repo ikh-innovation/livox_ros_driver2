@@ -33,8 +33,11 @@ public:
         pub1_ = nh.advertise<std_msgs::Bool>("enough", 10, true);
         pub2_ = nh.advertise<std_msgs::Bool>("active", 10, true);
 
-        active_.data = true;
-        enough_points_.data = true;
+        active_.data = false;
+        enough_points_.data = false;
+
+        pub1_.publish(enough_points_);
+        pub2_.publish(active_);
 
         // Initialize timers
         active_timer_ = nh.createTimer(ros::Duration(pcl_timeout_), &PclAnalyzerNodelet::activeCallback, this);
