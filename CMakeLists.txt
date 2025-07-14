@@ -193,6 +193,8 @@ add_dependencies(livox_to_pointcloud2 ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_gen
 
 add_dependencies(pointcloud2_to_livox ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
+add_dependencies(pcl_analyzer ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
+
 #---------------------------------------------------------------------------------------
 # include file
 #---------------------------------------------------------------------------------------
