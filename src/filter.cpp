@@ -98,8 +98,8 @@ namespace livox_ros
 
         void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
         {
-	    if (!init_)
-	    {
+            if (!init_)
+            {
                 for (std::size_t d = 0; d < cloud_msg->fields.size (); ++d)
                 {
                     if (cloud_msg->fields[d].name == "x")
@@ -143,8 +143,9 @@ namespace livox_ros
                                 {
                                     return std::min(sizeofDatatype(field.datatype), static_cast<int>(sizeof(double)));
                                 });
-	        init_ = true;	    
-	    }		    
+                init_ = true;	    
+            }
+            		    
             sensor_msgs::PointCloud2Ptr output{new sensor_msgs::PointCloud2(*cloud_msg)};
             boost::recursive_mutex::scoped_lock lock(mutex_);
             if (enable_box_ || enable_tag_)
