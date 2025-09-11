@@ -23,61 +23,6 @@ namespace livox_ros
             ros::NodeHandle &nh = getNodeHandle();
             ros::NodeHandle &private_nh = getPrivateNodeHandle();
 
-            // Initialize indexes                  
-            const std::string resolved_topic{nh.resolveName("input_point_cloud", true)};
-            sensor_msgs::PointCloud2ConstPtr init_msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(resolved_topic);
-            if (init_msg)
-            {
-                for (std::size_t d = 0; d < init_msg->fields.size (); ++d)
-                {
-                    if (init_msg->fields[d].name == "x")
-                    {
-                        x_idx_ = d;
-                    }
-                    else if (init_msg->fields[d].name == "y")
-                    {
-                        y_idx_ = d;
-                    }
-                    else if (init_msg->fields[d].name == "z")
-                    {
-                        z_idx_ = d;
-                    }
-                    else if (init_msg->fields[d].name == "tag")
-                    {
-                        tag_idx_ = d;
-                    }
-                }
-
-                if (x_idx_ == -1 || y_idx_ == -1 || z_idx_ == -1 || tag_idx_ == -1)
-                {
-                    ROS_ERROR("Could not find required fields (x,y,z,tag) in point cloud message");
-                    exit(1);
-                }
-                
-                // Obtain the size of datatype
-                const auto sizeofDatatype = [](const auto& datatype) -> int
-                {
-                    const auto size = pcl::getFieldSize(datatype);
-                    if (size == 0) {
-                        ROS_ERROR("Invalid field type (%d)!\n", datatype);
-                    }
-                    return size;
-                };
-
-                // Restrict size of a field to be at-max sizeof(FLOAT64) now to support {U}INT64
-                field_sizes_.resize(init_msg->fields.size());
-                std::transform(init_msg->fields.begin(), init_msg->fields.end(), field_sizes_.begin(),
-                                [&sizeofDatatype](const auto& field)
-                                {
-                                    return std::min(sizeofDatatype(field.datatype), static_cast<int>(sizeof(double)));
-                                });
-            }
-            else
-            {
-                ROS_ERROR("Could not get initial point cloud message");
-                exit(1);
-            }             
-
             // Initialize TF listener
             tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
 
@@ -153,6 +98,53 @@ namespace livox_ros
 
         void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
         {
+	    if (!init_)
+	    {
+                for (std::size_t d = 0; d < cloud_msg->fields.size (); ++d)
+                {
+                    if (cloud_msg->fields[d].name == "x")
+                    {
+                        x_idx_ = d;
+                    }
+                    else if (cloud_msg->fields[d].name == "y")
+                    {
+                        y_idx_ = d;
+                    }
+                    else if (cloud_msg->fields[d].name == "z")
+                    {
+                        z_idx_ = d;
+                    }
+                    else if (cloud_msg->fields[d].name == "tag")
+                    {
+                        tag_idx_ = d;
+                    }
+                }
+
+                if (x_idx_ == -1 || y_idx_ == -1 || z_idx_ == -1 || tag_idx_ == -1)
+                {
+                    ROS_ERROR("Could not find required fields (x,y,z,tag) in point cloud message");
+                    exit(1);
+                }
+                
+                // Obtain the size of datatype
+                const auto sizeofDatatype = [](const auto& datatype) -> int
+                {
+                    const auto size = pcl::getFieldSize(datatype);
+                    if (size == 0) {
+                        ROS_ERROR("Invalid field type (%d)!\n", datatype);
+                    }
+                    return size;
+                };
+
+                // Restrict size of a field to be at-max sizeof(FLOAT64) now to support {U}INT64
+                field_sizes_.resize(cloud_msg->fields.size());
+                std::transform(cloud_msg->fields.begin(), cloud_msg->fields.end(), field_sizes_.begin(),
+                                [&sizeofDatatype](const auto& field)
+                                {
+                                    return std::min(sizeofDatatype(field.datatype), static_cast<int>(sizeof(double)));
+                                });
+	        init_ = true;	    
+	    }		    
             sensor_msgs::PointCloud2Ptr output{new sensor_msgs::PointCloud2(*cloud_msg)};
             boost::recursive_mutex::scoped_lock lock(mutex_);
             if (enable_box_ || enable_tag_)
@@ -274,7 +266,8 @@ namespace livox_ros
         std::vector<int> original_indices_; 
 
         int x_idx_{-1}, y_idx_{-1}, z_idx_{-1}, tag_idx_{-1};
-
+	
+	bool init_{false};
         bool tf_ready_{false};
         bool enable_box_{true}, enable_tag_{true};
         bool rsrv_zero_{true}, rsrv_one_{true}, rsrv_two_{true}, rsrv_three_{true};        
