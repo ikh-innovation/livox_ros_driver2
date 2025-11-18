@@ -453,11 +453,12 @@ void PubHandler::CheckTimer(uint32_t id) {
       last_pub_time_ = now_time;
       first = false;
       return;
-    }
+    }     
     if (now_time - last_pub_time_ < std::chrono::nanoseconds(publish_interval_)) {
       return;
     }
-    last_pub_time_ += std::chrono::nanoseconds(publish_interval_);
+    // last_pub_time_ += std::chrono::nanoseconds(publish_interval_);
+    last_pub_time_ = now_time;
     for (auto &process_handler : lidar_process_handlers_) {
       frame_.base_time[frame_.lidar_num] = process_handler.second->GetLidarBaseTime();
       uint32_t handle = process_handler.first;
