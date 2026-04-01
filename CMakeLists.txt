@@ -153,6 +153,9 @@ add_library(pcl_analyzer
   src/pcl_analyzer.cpp
 )
 
+add_executable(lidar_setup 
+  src/lidar_setup.cpp)
+
 #---------------------------------------------------------------------------------------
 # precompile macro and compile option
 #---------------------------------------------------------------------------------------
@@ -177,6 +180,10 @@ target_compile_options(pointcloud2_to_livox
 )
 
 target_compile_options(pcl_analyzer
+  PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
+)
+
+target_compile_options(lidar_setup
   PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
 )
 
@@ -277,6 +284,10 @@ target_link_libraries(pcl_analyzer
   ${Boost_LIBRARY}
   ${catkin_LIBRARIES}
   ${APR_LIBRARIES}
+)
+
+target_link_libraries(lidar_setup
+  ${LIVOX_LIDAR_SDK_LIBRARY}
 )
 
 
