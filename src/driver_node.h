@@ -32,6 +32,7 @@
 namespace livox_ros {
 
 class Lddc;
+class LdsLidar;
 
 class DriverNode final : public nodelet::Nodelet {
  public:
@@ -50,6 +51,7 @@ class DriverNode final : public nodelet::Nodelet {
   ros::NodeHandle& getMyNodeHandle(){return getNodeHandle();}
   ros::NodeHandle& getMyPrivateNodeHandle(){return getPrivateNodeHandle();}
 
+  std::unique_ptr<LdsLidar> lds_lidar_ptr_;
   std::unique_ptr<Lddc> lddc_ptr_;
   std::shared_ptr<std::thread> pointclouddata_poll_thread_;
   std::shared_ptr<std::thread> imudata_poll_thread_;
