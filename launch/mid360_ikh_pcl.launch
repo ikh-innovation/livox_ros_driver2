@@ -57,7 +57,7 @@
     <node pkg="nodelet" type="nodelet" name="lidar_nodelet_manager" args="manager" output="screen"/>
 
     <!-- New nodelet -->
-    <node pkg="nodelet" type="nodelet" name="livox_lidar_publisher2" args="load livox_ros_driver2/DriverNode lidar_nodelet_manager" output="screen">
+    <node pkg="nodelet" type="nodelet" name="livox_lidar_publisher2" args="load livox_ros_driver2/DriverNode lidar_nodelet_manager --no-bond" output="screen">
         <remap from="livox_lidar_publisher2/livox/enable_sampling" to="livox/enable_sampling"/>
 		<remap from="livox_lidar_publisher2/livox/lidar" to="livox/lidar"/>
 		<remap from="livox_lidar_publisher2/livox/imu" to="livox/imu"/>
@@ -76,7 +76,7 @@
 		<param name="sample_at_startup" type="bool" value="$(arg sample_at_startup)"/>
     </node>
 
-	<node pkg="nodelet" type="nodelet" name="livox_filter" args="load livox_ros_driver2/FilterNodelet lidar_nodelet_manager" output="screen">
+	<node pkg="nodelet" type="nodelet" name="livox_filter" args="load livox_ros_driver2/FilterNodelet lidar_nodelet_manager --no-bond" output="screen">
 		<remap from="input_point_cloud" to="livox/lidar"/>
 		<remap from="filtered_point_cloud" to="livox/lidar_filtered_pcl"/>
 		<param name="enable_box_filtering" type="bool" value="$(arg enable_box_filtering)"/>
@@ -112,12 +112,12 @@
 		<param name="rsrv_three" type="bool" value="$(arg rsrv_three)"/>
 	</node>
 
-	<node pkg="nodelet" type="nodelet" name="p_to_l" args="load livox_ros_driver2/PCL2LivoxNodelet lidar_nodelet_manager" output="screen">
+	<node pkg="nodelet" type="nodelet" name="p_to_l" args="load livox_ros_driver2/PCL2LivoxNodelet lidar_nodelet_manager --no-bond" output="screen">
 		<remap from="input_point_cloud" to="livox/lidar_filtered_pcl"/>
 		<remap from="output_point_cloud" to="livox/lidar_filtered"/>
 	</node>
 
-	<node pkg="nodelet" type="nodelet" name="pcl_analyzer" args="load livox_ros_driver2/PclAnalyzerNodelet lidar_nodelet_manager" output="screen">
+	<node pkg="nodelet" type="nodelet" name="pcl_analyzer" args="load livox_ros_driver2/PclAnalyzerNodelet lidar_nodelet_manager --no-bond" output="screen">
 		<remap from="input_point_cloud" to="livox/lidar_filtered_pcl"/>
 		<remap from="active" to="livox/active"/>
 		<remap from="enough" to="livox/enough_points"/>
