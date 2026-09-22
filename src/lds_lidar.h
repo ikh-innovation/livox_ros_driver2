@@ -33,6 +33,7 @@
 
 #include "lds.h"
 #include "comm/comm.h"
+#include "comm/pub_handler.h"
 
 #include "livox_lidar_api.h"
 #include "livox_lidar_def.h"
@@ -43,22 +44,16 @@ namespace livox_ros {
 
 class LdsLidar final : public Lds {
  public:
-  static LdsLidar *GetInstance(double publish_freq, bool start_at_startup) {
-    printf("LdsLidar *GetInstance\n");
-    static LdsLidar lds_lidar(publish_freq, start_at_startup);
-    return &lds_lidar;
-  }
+  LdsLidar(double publish_freq, bool start_at_startup);
+  LdsLidar(const LdsLidar &) = delete;
+  ~LdsLidar();
+  LdsLidar &operator=(const LdsLidar &) = delete;
 
   bool InitLdsLidar(const std::string& path_name);
   bool Start();
 
   int DeInitLdsLidar(void);
  private:
-  LdsLidar(double publish_freq, bool start_at_startup);
-  LdsLidar(const LdsLidar &) = delete;
-  ~LdsLidar();
-  LdsLidar &operator=(const LdsLidar &) = delete;
-
   bool ParseSummaryConfig();
 
   bool InitLidars();
@@ -91,6 +86,7 @@ class LdsLidar final : public Lds {
   uint32_t whitelist_count_;
   volatile bool is_initialized_;
   char broadcast_code_whitelist_[kMaxLidarCount][kBroadcastCodeSize];
+  PubHandler pub_handler_;
 };
 
 }  // namespace livox_ros

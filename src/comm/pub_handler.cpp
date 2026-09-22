@@ -33,11 +33,6 @@ namespace livox_ros {
 
 std::atomic<bool> PubHandler::is_timestamp_sync_;
 
-PubHandler &pub_handler() {
-  static PubHandler handler;
-  return handler;
-}
-
 void PubHandler::Init() {
 }
 
