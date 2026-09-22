@@ -24,6 +24,7 @@
 
 #include "driver_node.h"
 #include "lddc.h"
+#include "lds_lidar.h"
 
 namespace livox_ros {
 

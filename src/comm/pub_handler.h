@@ -140,8 +140,6 @@ class PubHandler {
   uint16_t lidar_listen_id_ = 0;
 };
 
-PubHandler &pub_handler();
-
 }  // namespace livox_ros
 
 #endif  // LIVOX_DRIVER_PUB_HANDLER_H_

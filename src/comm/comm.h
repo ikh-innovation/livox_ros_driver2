@@ -204,7 +204,7 @@ typedef struct {
 } RawPacket;
 
 typedef struct {
-  StoragePacket *storage_packet;
+  StoragePacket *storage_packet = nullptr;
   volatile uint32_t rd_idx;
   volatile uint32_t wr_idx;
   uint32_t mask;

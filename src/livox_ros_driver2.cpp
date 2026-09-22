@@ -92,7 +92,8 @@ void DriverNode::onInit()
     private_nh.getParam("user_config_path", user_config_path);
     DRIVER_INFO(this, "Config file : %s", user_config_path.c_str());
 
-    LdsLidar *read_lidar = LdsLidar::GetInstance(publish_freq, sample_at_startup);
+    lds_lidar_ptr_ = std::make_unique<LdsLidar>(publish_freq, sample_at_startup);
+    LdsLidar *read_lidar = lds_lidar_ptr_.get();
     lddc_ptr_->RegisterLds(static_cast<Lds *>(read_lidar));
 
     if ((read_lidar->InitLdsLidar(user_config_path))) {

@@ -54,12 +54,6 @@ using namespace std;
 
 namespace livox_ros {
 
-/** Const varible ------------------------------------------------------------*/
-/** For callback use only */
-LdsLidar *g_lds_ldiar = nullptr;
-
-/** Global function for common use -------------------------------------------*/
-
 /** Lds lidar function -------------------------------------------------------*/
 LdsLidar::LdsLidar(double publish_freq, const bool start_at_startup)
     : Lds(publish_freq, start_at_startup, kSourceRawLidar), 
@@ -78,10 +72,6 @@ bool LdsLidar::InitLdsLidar(const std::string& path_name) {
   if (is_initialized_) {
     printf("Lds is already inited!\n");
     return false;
-  }
-
-  if (g_lds_ldiar == nullptr) {
-    g_lds_ldiar = this;
   }
 
   path_ = path_name;
@@ -145,12 +135,12 @@ bool LdsLidar::InitLivoxLidar() {
   uint8_t actual_lidar_count{0};
   for (auto& config : user_configs) {
     uint8_t index = 0;
-    int8_t ret = g_lds_ldiar->cache_index_.GetFreeIndex(kLivoxLidarType, config.handle, index);
+    int8_t ret = cache_index_.GetFreeIndex(kLivoxLidarType, config.handle, index);
     if (ret != 0) {
       std::cout << "failed to get free index, lidar ip: " << IpNumToString(config.handle) << std::endl;
       continue;
     }
-    LidarDevice *p_lidar = &(g_lds_ldiar->lidars_[index]);
+    LidarDevice *p_lidar = &(lidars_[index]);
     p_lidar->lidar_type = kLivoxLidarType;
     p_lidar->livox_config = config;
     p_lidar->handle = config.handle;
@@ -176,18 +166,29 @@ bool LdsLidar::InitLivoxLidar() {
       lidar_param.param.y     = config.extrinsic_param.y;
       lidar_param.param.z     = config.extrinsic_param.z;
     }
-    pub_handler().AddLidarsExtParam(lidar_param);
+    pub_handler_.AddLidarsExtParam(lidar_param);
   }
 
   // Reboot Lidar
   reboots_started_ = 0;
-  SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeRebootCallback, g_lds_ldiar);
-  // Wait for reboots to start taking place
+  SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeRebootCallback, this);
+  // Wait for reboots to start taking place. Bounded with a timeout so that a lidar
+  // which never comes online (unreachable, misconfigured IP, ...) cannot block this
+  // call forever - that would in turn block onInit()/nodelet load or unload indefinitely.
   {
+    constexpr auto kRebootWaitTimeout = std::chrono::seconds(30);
     std::unique_lock<std::mutex> lock(reboot_mutex_);
-    reboot_cv_.wait(lock, [this, actual_lidar_count]{ return (reboots_started_ == actual_lidar_count); });
+    bool all_rebooted = reboot_cv_.wait_for(lock, kRebootWaitTimeout,
+        [this, actual_lidar_count]{ return (reboots_started_ == actual_lidar_count); });
+    if (!all_rebooted) {
+      std::cout << "Timed out waiting for lidar reboots to start (" << reboots_started_
+                << "/" << static_cast<int>(actual_lidar_count) << " observed); aborting lidar init."
+                << std::endl;
+      LivoxLidarSdkUninit();
+      return false;
+    }
   }
-  
+
   LivoxLidarSdkUninit();
   std::this_thread::sleep_for(std::chrono::seconds(12));
 
@@ -197,19 +198,19 @@ bool LdsLidar::InitLivoxLidar() {
     return false;
   }
   
-  // Setup Lidar 
-  SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeCallback, g_lds_ldiar);
+  // Setup Lidar
+  SetLivoxLidarInfoChangeCallback(LivoxLidarCallback::LidarInfoChangeCallback, this);
   
   return true;
 }
 
 void LdsLidar::SetLidarPubHandle() {
-  pub_handler().SetPointCloudsCallback(LidarCommonCallback::OnLidarPointClounCb, g_lds_ldiar);
-  pub_handler().SetImuDataCallback(LidarCommonCallback::LidarImuDataCallback, g_lds_ldiar);
-  pub_handler().SetStateInfoCallback(LidarCommonCallback::LidarStateInfoCallback, g_lds_ldiar);
+  pub_handler_.SetPointCloudsCallback(LidarCommonCallback::OnLidarPointClounCb, this);
+  pub_handler_.SetImuDataCallback(LidarCommonCallback::LidarImuDataCallback, this);
+  pub_handler_.SetStateInfoCallback(LidarCommonCallback::LidarStateInfoCallback, this);
 
   double publish_freq = Lds::GetLdsFrequency();
-  pub_handler().SetPointCloudConfig(publish_freq);
+  pub_handler_.SetPointCloudConfig(publish_freq);
 }
 
 bool LdsLidar::LivoxLidarStart() {
@@ -223,13 +224,14 @@ int LdsLidar::DeInitLdsLidar(void) {
   }
 
   if (lidar_summary_info_.lidar_type & kLivoxLidarType) {
-    for (int i = 0; i < g_lds_ldiar->lidar_count_; i++) {
+    for (int i = 0; i < lidar_count_; i++) {
       LidarDevice * p_lidar = &(lidars_[i]);
       if (p_lidar->lidar_type & kLivoxLidarType) {
         uint32_t handle = p_lidar->handle;
         SetLivoxLidarWorkMode(handle, kLivoxLidarWakeUp, LivoxLidarCallback::WorkModeChangeOnceCallback, nullptr);
       }
     }
+    pub_handler_.Uninit();
     LivoxLidarSdkUninit();
     printf("Livox Lidar SDK Deinit completely!\n");
   }
