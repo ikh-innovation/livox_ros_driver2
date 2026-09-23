@@ -60,7 +60,8 @@ void Lds::ResetLidar(LidarDevice *lidar, uint8_t data_src) {
   DeInitQueue(&lidar->data);
   lidar->imu_data.Clear();
   lidar->state_info.Clear();
-
+    
+  lidar->lidar_type = 0;
   lidar->data_src = data_src;
   lidar->connect_state = kConnectStateOff;
 }
